@@ -1,0 +1,19 @@
+{
+    "app": "961",
+    "scope": "ALL",
+    "desktop": {
+        "js": [
+            "desktop.js",
+            "lib/js/sweetalert.min.js" 
+    ],
+        "css": [
+            "desktop.css",
+            "lib/css/bootstrap.min.css",
+            "lib/css/fontawesome.min.css"
+        ]
+    },
+    "mobile": {
+        "js": [],
+        "css": []
+    }
+}

@@ -1,0 +1,35 @@
+{
+    "manifest_version": 1,
+    "version": "10.0.1",
+    "type": "APP",
+    "name": {
+        "en": "OGUSU Bulk Approval (一括承認)"
+    },
+    "description": {
+        "en": "承認を一括で処理するためのプラグインです。"
+    },
+    "icon": "bIcon.png",
+    "desktop": {
+        "js": [
+            "desktop.js",
+            "lib/js/sweetalert.min.js" 
+        ],
+        "css": [
+            "desktop.css",
+            "lib/css/bootstrap.min.css",
+            "lib/css/fontawesome.min.css"
+        ]
+    },
+    "config": {
+    "html": "config/config.html",
+    "js": [
+      "config/config.js"
+    ],
+    "css": [
+      "config/51-modern-default.css",
+      "config/config.css",
+      "config/custom.css"
+    ],
+    "required_params": ["searchPluginStatus"]
+    }
+}

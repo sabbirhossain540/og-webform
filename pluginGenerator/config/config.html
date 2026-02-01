@@ -1,0 +1,33 @@
+<div class="plugin-container" style="width: 900px;">
+    <h3 class="plugin-title">一括承認プラグインの設定</h3>
+    
+    <p class="plugin-description">
+        以下で一括承認プラグインの設定を行ってください。
+    </p>
+
+    <div class="setting">
+        <label class="kintoneplugin-label" for="dropdown-setting-searchPluginStatus">
+            Ogusu Real Time 検索プラグインの有効化
+        </label>
+        <p class="plugin-subtext">
+            Ogusu Real Time 検索プラグインが現在有効かどうかを選択してください。
+        </p>
+        <div class="kintoneplugin-input-outer">
+            <select id="dropdown-setting-searchPluginStatus" class="kintoneplugin-input-select">
+                <option value="1">はい – プラグインは有効です。</option>
+                <option value="2">いいえ – プラグインは無効です。</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="setting">
+        <button type="button" id="add-status-btn" class="kintoneplugin-button">メールテンプレートの追加</button>
+    </div>
+    
+    <div id="status-container"></div>
+
+    <div class="setting button-group">
+        <button type="button" id="submit" class="kintoneplugin-button primary-button">保存</button>
+        <button type="button" id="cancel" class="kintoneplugin-button secondary-button">キャンセル</button>
+    </div>
+</div>

@@ -1,0 +1,47 @@
+#move-forward-button {
+    margin-right: 20px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+}
+
+#move-forward-button:hover {
+    background-color: #0056b3;
+}
+
+.row-dropdown{
+    width: 105px;
+    margin-left: 10px;
+}
+
+.record-checkbox{
+    margin-left: 10px;
+}
+
+.spinner-border.gradient-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 0.25em solid transparent;
+    border-top: 0.25em solid;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+    border-top-color: transparent;
+    border-right-color: transparent;
+    background: linear-gradient(to right, #ff0000, #ff9900, #00ff00, #0000ff, #ff00ff);
+    background-size: 400% 400%;
+    animation: gradient-rotation 2s infinite;
+}
+
+@keyframes gradient-rotation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
