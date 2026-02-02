@@ -4,12 +4,17 @@
     "desktop": {
         "js": [
             "desktop.js",
-            "lib/js/sweetalert.min.js" 
+            "lib/js/sweetalert.min.js",
+            "lib/js/jquery.slim.js",
+            "lib/js/jquery.min.js",
+            "lib/js/bootstrap.min.js",
+            "lib/js/jqueryUI.js" 
     ],
         "css": [
             "desktop.css",
             "lib/css/bootstrap.min.css",
-            "lib/css/fontawesome.min.css"
+            "lib/css/fontawesome.min.css",
+            "lib/css/jqueryUI.css"
         ]
     },
     "mobile": {
