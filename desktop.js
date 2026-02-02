@@ -31,19 +31,51 @@
     }
   `;
   document.head.appendChild(style);
+  let fieldProperties = [];
 
-  // ===============================
-  // Kintone index view
-  // ===============================
-  kintone.events.on('app.record.index.show', function (event) {
+
+  
+  
+    function getFieldInfo() {
+        return new Promise((resolve, reject) => {
+            let allFieldName = [];
+            
+
+            var body = {
+                app: 953
+            };
+
+            kintone.api(
+                kintone.api.url('/k/v1/app/form/fields.json', true),
+                'GET',
+                body,
+                function (response) {
+                    Object.entries(response.properties).forEach(([key, value]) => {
+                        allFieldName.push(key);
+                        fieldProperties.push(value);
+                    });
+
+                    resolve(allFieldName);
+                },
+                function (error) {
+                    reject(error);
+                }
+            );
+        });
+    }
+
+
+
+
+  kintone.events.on('app.record.index.show', async function (event) {
+    
+    let allFieldName = await getFieldInfo();
 
     if (document.getElementById('webformConfigBtn')) {
       return event;
     }
 
-    // ===============================
-    // Header button
-    // ===============================
+
     const el = kintone.app.getHeaderSpaceElement();
 
     const btn = document.createElement('button');
@@ -55,10 +87,14 @@
 
     el.appendChild(btn);
 
-    // ===============================
-    // Modal HTML
-    // ===============================
+
     if (!document.getElementById('webformConfigModal')) {
+
+        const fieldHtml = allFieldName
+        .map(item => `
+            <div class="drag btn btn-light btn-block mb-2">${item}</div>
+        `)
+        .join('');
 
       const modalHtml = `
       <div class="modal fade"
@@ -100,12 +136,7 @@
                     <div class="col-md-4 border-right">
                     <h6>Fields</h6>
                     <div id="modules" class="left-scroll">
-                        <div class="drag btn btn-light btn-block mb-2">Text</div>
-                        <div class="drag btn btn-light btn-block mb-2">Textarea</div>
-                        <div class="drag btn btn-light btn-block mb-2">Number</div>
-                        <div class="drag btn btn-light btn-block mb-2">Email</div>
-                        <div class="drag btn btn-light btn-block mb-2">Date</div>
-                        <div class="drag btn btn-light btn-block mb-2">Dropdown</div>
+                        ${fieldHtml}
                     </div>
                     </div>
 
@@ -140,8 +171,24 @@
       document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
 
+    function fieldTypeCheck(fieldName){
+        console.log(fieldProperties);
+        const field = fieldProperties.find(elem => elem.code === fieldName);
+        return field ? field.type : undefined;
+    }
+
+
     function typeWiseFieldGenerator(type){
-        if(type == "Textarea"){
+        const groupSelectionTypeField = [ 'ORGANIZATION_SELECT', 'GROUP_SELECT', 'CATEGORY', 'MULTI_SELECT', 'CHECK_BOX', 'USER_SELECT', 'CREATOR', 'MODIFIER', 'STATUS_ASSIGNEE'];
+        const dateTimeTypeField = ['CREATED_TIME', 'UPDATED_TIME', 'DATE', 'DATETIME', 'CREATED_AT', 'TIME'];
+        const editorType = ['EDITOR'];
+
+
+        const fieldType = fieldTypeCheck(type);
+        console.log(fieldType);
+
+
+        if(editorType.includes(fieldType)){
             return `<textarea
                 class="form-control mt-2"
                 rows="3"
@@ -150,7 +197,7 @@
 
         }
 
-        if (type == "Dropdown") {
+        if (groupSelectionTypeField.includes(fieldType)) {
             return `
                 <select class="form-control mt-2">
                 <option value="" disabled selected>
@@ -162,7 +209,7 @@
             `;
         }
 
-        if (type == "Date") {
+        if (dateTimeTypeField.includes(fieldType)) {
             return `
                 <label class="mt-2 mb-1 text-muted">Select date</label>
                 <input type="date"
@@ -175,9 +222,7 @@
                         placeholder="${type} field"/>`;
     }
 
-    // ===============================
-    // Drag & Drop INIT
-    // ===============================
+
     $('#webformConfigModal').on('shown.bs.modal', function () {
 
       if ($('.drag').data('ui-draggable')) {
@@ -201,9 +246,6 @@
 
             const type = ui.draggable.text();
 
-            const fieldTypeByCategory = typeWiseFieldGenerator(type);
-            console.log(fieldTypeByCategory);
-
             const field = $(`
                 <div class="drop-item border p-2 mb-2 bg-white">
 
@@ -223,7 +265,7 @@
                     </div>
                 </div>
 
-                ${fieldTypeByCategory}
+                ${typeWiseFieldGenerator(type)}
 
 
                 <button class="btn btn-sm btn-outline-danger mt-2 remove">
