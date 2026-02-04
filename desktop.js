@@ -1,191 +1,78 @@
 (function () {
   'use strict';
 
-  // ===============================
-  // Load FontAwesome
-  // ===============================
+  /* ================= FontAwesome ================= */
   const fa = document.createElement('link');
   fa.rel = 'stylesheet';
   fa.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
   document.head.appendChild(fa);
 
-  // ===============================
-  // Custom CSS for scroll
-  // ===============================
+  /* ================= CSS ================= */
   const style = document.createElement('style');
   style.innerHTML = `
-    .custom-modal .modal-body {
-      max-height: 75vh;
-      overflow: hidden;
-    }
-    .left-scroll {
-      max-height: 60vh;
-      overflow-y: auto;
-    }
-    .right-scroll {
-      max-height: 60vh;
-      overflow-y: auto;
-    }
+    .custom-modal .modal-body { max-height:75vh; overflow:hidden; }
+    .left-scroll,.right-scroll { max-height:60vh; overflow-y:auto; }
+
     .drag {
       cursor: grab;
+      border: 1px dashed #ccc;
+      background:#f8f9fa;
+    }
+    .drag.disabled {
+      opacity:.4;
+      pointer-events:none;
+    }
+
+    #fieldDropzone {
+      min-height:300px;
+      border:2px dashed #17a2b8;
+      border-radius:6px;
+      background:#fdfefe;
+    }
+
+    .drop-item {
+      border-left:4px solid #17a2b8;
+      background:#fff;
     }
   `;
   document.head.appendChild(style);
+
   let fieldProperties = [];
+  let rowIndex = 0;
+  let editRow = null;
 
+  /* ================= Field Info ================= */
+  function getFieldInfo() {
+    return new Promise((resolve, reject) => {
+      const names = [];
+      kintone.api(
+        kintone.api.url('/k/v1/app/form/fields.json', true),
+        'GET',
+        { app: kintone.app.getId() },
+        res => {
+          Object.entries(res.properties).forEach(([k, v]) => {
+            names.push(k);
+            fieldProperties.push(v);
+          });
+          resolve(names);
+        },
+        reject
+      );
+    });
+  }
 
-  
-  
-    function getFieldInfo() {
-        return new Promise((resolve, reject) => {
-            let allFieldName = [];
-            
+  function fieldTypeCheck(code) {
+    const f = fieldProperties.find(x => x.code === code);
+    return f ? f.type : '';
+  }
 
-            var body = {
-                app: 953
-            };
-
-            kintone.api(
-                kintone.api.url('/k/v1/app/form/fields.json', true),
-                'GET',
-                body,
-                function (response) {
-                    Object.entries(response.properties).forEach(([key, value]) => {
-                        allFieldName.push(key);
-                        fieldProperties.push(value);
-                    });
-
-                    resolve(allFieldName);
-                },
-                function (error) {
-                    reject(error);
-                }
-            );
-        });
-    }
-
-
-
-
-  kintone.events.on('app.record.index.show', async function (event) {
-    
-    let allFieldName = await getFieldInfo();
-
-    if (document.getElementById('webformConfigBtn')) {
-      return event;
-    }
-
-
-    const el = kintone.app.getHeaderSpaceElement();
-
-    const btn = document.createElement('button');
-    btn.id = 'webformConfigBtn';
-    btn.className = 'btn btn-warning ml-3 mb-3';
-    btn.innerHTML = '<i class="fas fa-compress mr-2"></i> Webform Configuration';
-    btn.setAttribute('data-toggle', 'modal');
-    btn.setAttribute('data-target', '#webformConfigModal');
-
-    el.appendChild(btn);
-
-
-    if (!document.getElementById('webformConfigModal')) {
-
-        const fieldHtml = allFieldName
-        .map(item => `
-            <div class="drag btn btn-light btn-block mb-2">${item}</div>
-        `)
-        .join('');
-
-      const modalHtml = `
-      <div class="modal fade"
-           id="webformConfigModal"
-           tabindex="-1"
-           role="dialog"
-           data-backdrop="static"
-           data-keyboard="false">
-
-        <div class="modal-dialog modal-xl modal-dialog-scrollable custom-modal" role="document">
-          <div class="modal-content">
-
-            <div class="modal-header">
-              <h5 class="modal-title">Webform Configuration</h5>
-              <button type="button" class="close" data-dismiss="modal">
-                <span>&times;</span>
-              </button>
-            </div>
-
-            <div class="modal-body">
-              <div class="container-fluid">
-
-                <!-- APP TITLE -->
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                    <h6>App Title</h6>
-                    <input type="text"
-                            name="app_title"
-                            id="app_title"
-                            class="form-control"
-                            placeholder="App Title">
-                    </div>
-                </div>
-
-                <!-- MAIN CONTENT -->
-                <div class="row">
-
-                    <!-- LEFT -->
-                    <div class="col-md-4 border-right">
-                    <h6>Fields</h6>
-                    <div id="modules" class="left-scroll">
-                        ${fieldHtml}
-                    </div>
-                    </div>
-
-                    <!-- RIGHT -->
-                    <div class="col-md-8">
-                    <h6>Form Preview</h6>
-                    <div id="dropzone" class="border p-2 right-scroll">
-                        <p class="text-muted">Drop fields here</p>
-                    </div>
-                    </div>
-
-                </div>
-
-                </div>
-
-            </div>
-
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                Close
-              </button>
-              <button type="button" class="btn btn-primary">
-                Save
-              </button>
-            </div>
-
-          </div>
-        </div>
-      </div>
-      `;
-
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
-
-    function fieldTypeCheck(fieldName){
-        console.log(fieldProperties);
-        const field = fieldProperties.find(elem => elem.code === fieldName);
-        return field ? field.type : undefined;
-    }
-
-
-    function typeWiseFieldGenerator(type){
+  function typeWiseFieldGenerator(type){
         const groupSelectionTypeField = [ 'ORGANIZATION_SELECT', 'GROUP_SELECT', 'CATEGORY', 'MULTI_SELECT', 'CHECK_BOX', 'USER_SELECT', 'CREATOR', 'MODIFIER', 'STATUS_ASSIGNEE'];
         const dateTimeTypeField = ['CREATED_TIME', 'UPDATED_TIME', 'DATE', 'DATETIME', 'CREATED_AT', 'TIME'];
         const editorType = ['EDITOR'];
 
 
         const fieldType = fieldTypeCheck(type);
-        console.log(fieldType);
 
 
         if(editorType.includes(fieldType)){
@@ -222,91 +109,212 @@
                         placeholder="${type} field"/>`;
     }
 
+  /* ================= Bind Drop Item Events ================= */
+  function bindDropItemEvents(field) {
 
-    $('#webformConfigModal').on('shown.bs.modal', function () {
+    const code = field.data('code');
 
-      if ($('.drag').data('ui-draggable')) {
-        return;
+    // remove
+    field.find('.remove').off().on('click', () => {
+      field.remove();
+      $(`.drag:contains("${code}")`).removeClass('disabled');
+    });
+
+    // title edit
+    field.find('.edit-title').off().on('click', e => {
+      e.stopPropagation();
+      field.find('.title-text,.edit-title').addClass('d-none');
+      field.find('.title-input').removeClass('d-none').focus();
+    });
+
+    field.find('.title-input').off().on('blur keydown', function (e) {
+      if (e.type === 'blur' || e.key === 'Enter') {
+        const v = $(this).val() || code;
+        field.find('.title-text').text(v).removeClass('d-none');
+        field.find('.edit-title').removeClass('d-none');
+        $(this).addClass('d-none');
       }
+    });
+  }
 
-      $('.drag').draggable({
-        helper: 'clone',
-        appendTo: 'body',
-        zIndex: 10000,
-        cursor: 'move',
-        revert: 'invalid'
-      });
+  /* ================= Dropzone ================= */
+  function initDropzone(selector) {
 
-      $('#dropzone')
-        .droppable({
-            accept: '.drag',
-            tolerance: 'pointer',
-            hoverClass: 'bg-light',
-            drop: function (e, ui) {
+    $('.drag:not(.disabled)').draggable({
+      helper: 'clone',
+      appendTo: 'body',
+      zIndex: 10000,
+      revert: 'invalid'
+    });
 
-            const type = ui.draggable.text();
+    $(selector).droppable({
+      accept: '.drag:not(.disabled)',
+      drop: function (e, ui) {
 
-            const field = $(`
-                <div class="drop-item border p-2 mb-2 bg-white">
+        const code = ui.draggable.text();
+        ui.draggable.addClass('disabled');
 
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="field-title d-flex align-items-center">
+        const field = $(`
+          <div class="drop-item p-2 mb-2" data-code="${code}">
+            <div class="d-flex align-items-center mb-1">
+              <strong class="title-text mr-2">${code}</strong>
+              <input class="form-control form-control-sm title-input d-none"
+                     value="${code}" style="width:160px">
+              <button class="btn btn-sm edit-title">
+                <i class="fa fa-edit"></i>
+              </button>
+            </div>
 
-                    <strong class="title-text mr-2">${type}</strong>
+            ${typeWiseFieldGenerator(code)}
 
-                    <input type="text"
-                            class="form-control form-control-sm title-input d-none"
-                            value="${type}"
-                            style="width: 180px;">
+            <button class="btn btn-sm btn-outline-danger mt-2 remove">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        `);
 
-                    <button class="btn edit-title">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    </div>
+        bindDropItemEvents(field);
+        $(selector).append(field);
+      }
+    }).sortable({ items: '.drop-item' });
+  }
+
+  /* ================= Kintone Event ================= */
+  kintone.events.on('app.record.index.show', async function (event) {
+
+    if (document.getElementById('webformConfigBtn')) return event;
+
+    const fields = await getFieldInfo();
+    const fieldHtml = fields.map(f =>
+      `<div class="drag btn btn-light btn-block mb-2">${f}</div>`
+    ).join('');
+
+    kintone.app.getHeaderSpaceElement().insertAdjacentHTML('beforeend', `
+      <button id="webformConfigBtn"
+        class="btn btn-warning ml-3 mb-3"
+        data-toggle="modal"
+        data-target="#mainModal">
+        Webform Configuration
+      </button>
+    `);
+
+    /* MAIN MODAL */
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="modal fade" id="mainModal">
+        <div class="modal-dialog modal-xl custom-modal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5>Webform Configuration</h5>
+              <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <button id="addRowBtn" class="btn btn-success btn-sm mb-2">
+                <i class="fa fa-plus"></i> Add
+              </button>
+              <table class="table table-bordered table-sm">
+                <thead>
+                  <tr><th>#</th><th>Preview</th><th>Action</th></tr>
+                </thead>
+                <tbody id="configTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    /* FIELD MODAL */
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="modal fade" id="fieldConfigModal">
+        <div class="modal-dialog modal-xl custom-modal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5>Configure Fields</h5>
+              <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-4 border-right">
+                  <h6>Fields</h6>
+                  <div id="fieldList" class="left-scroll">${fieldHtml}</div>
                 </div>
-
-                ${typeWiseFieldGenerator(type)}
-
-
-                <button class="btn btn-sm btn-outline-danger mt-2 remove">
-                    <i class="fa fa-trash"></i>
-                </button>
+                <div class="col-md-8">
+                  <h6>Form Preview</h6>
+                  <div id="fieldDropzone" class="right-scroll p-2">
+                    <p class="text-muted">Drop fields here</p>
+                  </div>
                 </div>
-            `);
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="saveField" class="btn btn-primary">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
 
-            // REMOVE FIELD
-            field.find('.remove').on('click', function () {
-                field.remove();
-            });
+    /* ADD */
+    document.getElementById('addRowBtn').onclick = () => {
+      editRow = null;
+      $('#fieldDropzone').html('<p class="text-muted">Drop fields here</p>');
+      $('#fieldList .drag').removeClass('disabled');
+      $('#fieldConfigModal').modal('show');
+    };
 
-            // ENABLE TITLE EDIT
-            field.find('.edit-title').on('click', function (e) {
-                e.stopPropagation(); // prevent drag conflict
-                field.find('.title-text').addClass('d-none');
-                field.find('.edit-title').addClass('d-none');
-                field.find('.title-input').removeClass('d-none').focus();
-            });
+    /* SAVE */
+    document.getElementById('saveField').onclick = () => {
+      const html = $('#fieldDropzone').html();
+      if (!html.includes('drop-item')) return alert('Add at least one field');
 
-            // SAVE TITLE (blur / enter)
-            field.find('.title-input').on('blur keydown', function (e) {
-                if (e.type === 'blur' || e.key === 'Enter') {
-                const val = $(this).val().trim() || type;
-                field.find('.title-text').text(val).removeClass('d-none');
-                field.find('.edit-title').removeClass('d-none');
-                $(this).addClass('d-none');
-                }
-            });
+      if (editRow) {
+        editRow.children[1].innerHTML = html;
+      } else {
+        rowIndex++;
+        document.getElementById('configTable').insertAdjacentHTML('beforeend', `
+          <tr>
+            <td>${rowIndex}</td>
+            <td>${html}</td>
+            <td>
+              <button class="btn btn-info btn-sm editRow">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button class="btn btn-danger btn-sm deleteRow">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `);
+      }
+      $('#fieldConfigModal').modal('hide');
+    };
 
-            $('#dropzone').append(field);
-            }
-        })
-        .sortable({
-            items: '.drop-item',
-            cursor: 'move'
+    /* EDIT / DELETE */
+    document.addEventListener('click', e => {
+
+      if (e.target.closest('.editRow')) {
+        editRow = e.target.closest('tr');
+
+        $('#fieldDropzone').html(editRow.children[1].innerHTML);
+
+        $('#fieldList .drag').removeClass('disabled');
+
+        $('#fieldDropzone .drop-item').each(function () {
+          const code = $(this).data('code');
+          $(`.drag:contains("${code}")`).addClass('disabled');
+          bindDropItemEvents($(this)); // ⭐ rebind events
         });
 
+        $('#fieldConfigModal').modal('show');
+      }
 
+      if (e.target.closest('.deleteRow')) {
+        e.target.closest('tr').remove();
+      }
+    });
 
+    $('#fieldConfigModal').on('shown.bs.modal', () => {
+      initDropzone('#fieldDropzone');
     });
 
     return event;
