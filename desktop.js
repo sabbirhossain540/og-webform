@@ -12,28 +12,10 @@
   style.innerHTML = `
     .custom-modal .modal-body { max-height:75vh; overflow:hidden; }
     .left-scroll,.right-scroll { max-height:60vh; overflow-y:auto; }
-
-    .drag {
-      cursor: grab;
-      border: 1px dashed #ccc;
-      background:#f8f9fa;
-    }
-    .drag.disabled {
-      opacity:.4;
-      pointer-events:none;
-    }
-
-    #fieldDropzone {
-      min-height:300px;
-      border:2px dashed #17a2b8;
-      border-radius:6px;
-      background:#fdfefe;
-    }
-
-    .drop-item {
-      border-left:4px solid #17a2b8;
-      background:#fff;
-    }
+    .drag { cursor: grab; border:1px dashed #ccc; background:#f8f9fa; }
+    .drag.disabled { opacity:.4; pointer-events:none; }
+    #fieldDropzone { min-height:65vh; border:2px dashed #ddd; background:#eee; }
+    .drop-item { background:#fff; border-left:4px solid #ccc; }
   `;
   document.head.appendChild(style);
 
@@ -50,8 +32,8 @@
         'GET',
         { app: kintone.app.getId() },
         res => {
-          Object.entries(res.properties).forEach(([k, v]) => {
-            names.push(k);
+          Object.values(res.properties).forEach(v => {
+            names.push(v.code);
             fieldProperties.push(v);
           });
           resolve(names);
@@ -66,72 +48,86 @@
     return f ? f.type : '';
   }
 
-  function typeWiseFieldGenerator(type){
-        const groupSelectionTypeField = [ 'ORGANIZATION_SELECT', 'GROUP_SELECT', 'CATEGORY', 'MULTI_SELECT', 'CHECK_BOX', 'USER_SELECT', 'CREATOR', 'MODIFIER', 'STATUS_ASSIGNEE'];
-        const dateTimeTypeField = ['CREATED_TIME', 'UPDATED_TIME', 'DATE', 'DATETIME', 'CREATED_AT', 'TIME'];
-        const editorType = ['EDITOR'];
+  /* ================= Field Generator ================= */
+  function typeWiseFieldGenerator(code) {
+    const type = fieldTypeCheck(code);
 
-
-        const fieldType = fieldTypeCheck(type);
-
-
-        if(editorType.includes(fieldType)){
-            return `<textarea
-                class="form-control mt-2"
-                rows="3"
-                placeholder="${type} field">
-            </textarea>`;
-
-        }
-
-        if (groupSelectionTypeField.includes(fieldType)) {
-            return `
-                <select class="form-control mt-2">
-                <option value="" disabled selected>
-                    Select ${type}
-                </option>
-                <option value="option1">Option 1</option>
-                <option value="option2">Option 2</option>
-                </select>
-            `;
-        }
-
-        if (dateTimeTypeField.includes(fieldType)) {
-            return `
-                <label class="mt-2 mb-1 text-muted">Select date</label>
-                <input type="date"
-                    class="form-control" />
-            `;
-        }
-
-        return `<input type="text"
-                        class="form-control mt-2"
-                        placeholder="${type} field"/>`;
+    if (type === 'EDITOR') {
+      return `<textarea class="form-control mt-1" rows="2"></textarea>`;
     }
 
-  /* ================= Bind Drop Item Events ================= */
-  function bindDropItemEvents(field) {
+    if (['DATE', 'DATETIME', 'TIME'].includes(type)) {
+      return `<input type="date" class="form-control mt-1">`;
+    }
 
+    if (['CHECK_BOX', 'MULTI_SELECT', 'CATEGORY', 'USER_SELECT'].includes(type)) {
+      return `<select class="form-control mt-1"><option>Select ${code}</option></select>`;
+    }
+
+    return `<input type="text" class="form-control mt-1">`;
+  }
+
+  /* ================= Form Title ================= */
+
+  function initFormTitle() {
+    if ($('#fieldDropzone .form-title-wrapper').length) return;
+
+    $('#fieldDropzone').prepend(`
+      <div class="form-title-wrapper mb-3">
+        <label class="font-weight-bold">
+          Application Title <span class="text-danger">*</span>
+        </label>
+        <input type="text"
+          class="form-control form-title-input"
+          placeholder="Enter form title">
+        <small class="text-danger error-title d-none">
+          Application Title is required
+        </small>
+      </div>
+
+      <div class="form-title-wrapper mb-3">
+        <label class="font-weight-bold">Description</label>
+        <textarea class="form-control form-description-input"></textarea>
+      </div>
+
+      <div class="form-title-wrapper mb-3">
+        <label class="font-weight-bold">
+          Directory Name <span class="text-danger">*</span>
+        </label>
+        <input type="text"
+          class="form-control form-directory-input"
+          placeholder="Directory Name">
+        <small class="text-danger error-directory d-none">
+          Directory Name is required
+        </small>
+      </div>
+    `);
+  }
+
+
+
+  /* ================= Field Events ================= */
+  function bindDropItemEvents(field) {
     const code = field.data('code');
 
-    // remove
-    field.find('.remove').off().on('click', () => {
+    /* Remove */
+    field.find('.remove').off().on('click', function () {
       field.remove();
       $(`.drag:contains("${code}")`).removeClass('disabled');
     });
 
-    // title edit
-    field.find('.edit-title').off().on('click', e => {
-      e.stopPropagation();
-      field.find('.title-text,.edit-title').addClass('d-none');
-      field.find('.title-input').removeClass('d-none').focus();
+    /* Edit field title */
+    field.find('.edit-field-title').off().on('click', function () {
+      field.find('.field-title-text').addClass('d-none');
+      field.find('.field-title-input').removeClass('d-none').focus();
+      $(this).addClass('d-none');
     });
 
-    field.find('.title-input').off().on('blur keydown', function (e) {
+    field.find('.field-title-input').off().on('blur keydown', function (e) {
       if (e.type === 'blur' || e.key === 'Enter') {
-        const v = $(this).val() || code;
-        field.find('.title-text').text(v).removeClass('d-none');
-        field.find('.edit-title').removeClass('d-none');
+        const v = $(this).val().trim() || code;
+        field.find('.field-title-text').text(v).removeClass('d-none');
+        field.find('.edit-field-title').removeClass('d-none');
         $(this).addClass('d-none');
       }
     });
@@ -139,7 +135,6 @@
 
   /* ================= Dropzone ================= */
   function initDropzone(selector) {
-
     $('.drag:not(.disabled)').draggable({
       helper: 'clone',
       appendTo: 'body',
@@ -150,38 +145,129 @@
     $(selector).droppable({
       accept: '.drag:not(.disabled)',
       drop: function (e, ui) {
+        initFormTitle();
 
-        const code = ui.draggable.text();
+        const code = ui.draggable.text().trim();
+        const type = fieldTypeCheck(code);
         ui.draggable.addClass('disabled');
 
         const field = $(`
-          <div class="drop-item p-2 mb-2" data-code="${code}">
+          <div class="drop-item p-2 mb-2"
+            data-code="${code}"
+            data-type="${type}">
+
             <div class="d-flex align-items-center mb-1">
-              <strong class="title-text mr-2">${code}</strong>
-              <input class="form-control form-control-sm title-input d-none"
-                     value="${code}" style="width:160px">
-              <button class="btn btn-sm edit-title">
+              <strong class="field-title-text mr-2">${code}</strong>
+
+              <input type="text"
+                class="form-control form-control-sm field-title-input d-none"
+                value="${code}"
+                style="width:160px">
+
+              <button class="btn btn-sm btn-link edit-field-title">
                 <i class="fa fa-edit"></i>
               </button>
             </div>
 
             ${typeWiseFieldGenerator(code)}
 
-            <button class="btn btn-sm btn-outline-danger mt-2 remove">
-              <i class="fa fa-trash"></i>
-            </button>
+            <button class="btn btn-sm btn-outline-danger mt-2 remove">X</button>
           </div>
         `);
 
         bindDropItemEvents(field);
-        $(selector).append(field);
+        $(this).append(field);
       }
     }).sortable({ items: '.drop-item' });
   }
 
-  /* ================= Kintone Event ================= */
-  kintone.events.on('app.record.index.show', async function (event) {
+  /* ================= Collect Config ================= */
 
+  function collectFormConfig() {
+    const title = $('.form-title-input').val().trim();
+    const description = $('.form-description-input').val().trim();
+    const directory = $('.form-directory-input').val().trim();
+    const fields = [];
+
+    let hasError = false;
+
+    // reset previous errors
+    $('.error-title, .error-directory').addClass('d-none');
+    $('.form-title-input, .form-directory-input').removeClass('is-invalid');
+
+    // Title validation
+    if (!title) {
+      $('.error-title').removeClass('d-none');
+      $('.form-title-input').addClass('is-invalid');
+      hasError = true;
+    }
+
+    // Directory validation
+    if (!directory) {
+      $('.error-directory').removeClass('d-none');
+      $('.form-directory-input').addClass('is-invalid');
+      hasError = true;
+    }
+
+    // যদি error থাকে → data return করবে না
+    if (hasError) {
+      return null;
+    }
+
+    // fields collect
+    $('#fieldDropzone .drop-item').each(function () {
+      fields.push({
+        code: $(this).data('code'),
+        type: $(this).data('type'),
+        label: $(this).find('.field-title-text').text()
+      });
+    });
+
+    return {
+      title,
+      description,
+      directory,
+      fields
+    };
+  }
+
+
+  /* ================= Preview ================= */
+  function renderPreview(cfg) {
+    let generatedUrl = `www.amazon.com/s3/${cfg.directory}/index.html`;
+  return `
+    <div class="preview-header mb-4">
+      <div class="mb-2">
+        <strong>App Title:</strong>
+        <span class="text-primary">${cfg.title}</span>
+      </div>
+
+      <div class="mb-2">
+        <i>App Directory:</i>
+        <span class="text-muted">${cfg.directory}</span>
+      </div>
+      <div class="mb-2">
+        <i>App URL:</i>
+        <span class="text-muted"><a href="${generatedUrl}" target="blank">${generatedUrl}</a></span>
+      </div>
+    </div>
+
+    <div class="preview-fields">
+      ${cfg.fields.map(f => `
+        <div class="mt-3">
+          <label class="font-weight-bold d-block mb-1">
+            ${f.label}
+          </label>
+          ${typeWiseFieldGenerator(f.code)}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+
+  /* ================= Kintone ================= */
+  kintone.events.on('app.record.index.show', async event => {
     if (document.getElementById('webformConfigBtn')) return event;
 
     const fields = await getFieldInfo();
@@ -198,7 +284,6 @@
       </button>
     `);
 
-    /* MAIN MODAL */
     document.body.insertAdjacentHTML('beforeend', `
       <div class="modal fade" id="mainModal">
         <div class="modal-dialog modal-xl custom-modal">
@@ -209,7 +294,7 @@
             </div>
             <div class="modal-body">
               <button id="addRowBtn" class="btn btn-success btn-sm mb-2">
-                <i class="fa fa-plus"></i> Add
+                <i class="fa fa-plus"></i> Add Form
               </button>
               <table class="table table-bordered table-sm">
                 <thead>
@@ -221,10 +306,7 @@
           </div>
         </div>
       </div>
-    `);
 
-    /* FIELD MODAL */
-    document.body.insertAdjacentHTML('beforeend', `
       <div class="modal fade" id="fieldConfigModal">
         <div class="modal-dialog modal-xl custom-modal">
           <div class="modal-content">
@@ -235,11 +317,9 @@
             <div class="modal-body">
               <div class="row">
                 <div class="col-md-4 border-right">
-                  <h6>Fields</h6>
                   <div id="fieldList" class="left-scroll">${fieldHtml}</div>
                 </div>
                 <div class="col-md-8">
-                  <h6>Form Preview</h6>
                   <div id="fieldDropzone" class="right-scroll p-2">
                     <p class="text-muted">Drop fields here</p>
                   </div>
@@ -254,7 +334,6 @@
       </div>
     `);
 
-    /* ADD */
     document.getElementById('addRowBtn').onclick = () => {
       editRow = null;
       $('#fieldDropzone').html('<p class="text-muted">Drop fields here</p>');
@@ -262,26 +341,23 @@
       $('#fieldConfigModal').modal('show');
     };
 
-    /* SAVE */
     document.getElementById('saveField').onclick = () => {
-      const html = $('#fieldDropzone').html();
-      if (!html.includes('drop-item')) return alert('Add at least one field');
+      const cfg = collectFormConfig();
+      console.log(cfg);
+      if (!cfg.fields.length) return alert('Add at least one field');
 
       if (editRow) {
-        editRow.children[1].innerHTML = html;
+        editRow.dataset.config = JSON.stringify(cfg);
+        editRow.children[1].innerHTML = renderPreview(cfg);
       } else {
         rowIndex++;
-        document.getElementById('configTable').insertAdjacentHTML('beforeend', `
-          <tr>
+        $('#configTable').append(`
+          <tr data-config='${JSON.stringify(cfg)}'>
             <td>${rowIndex}</td>
-            <td>${html}</td>
+            <td>${renderPreview(cfg)}</td>
             <td>
-              <button class="btn btn-info btn-sm editRow">
-                <i class="fa fa-edit"></i>
-              </button>
-              <button class="btn btn-danger btn-sm deleteRow">
-                <i class="fa fa-trash"></i>
-              </button>
+              <button class="btn btn-info btn-sm editRow"><i class="fa fa-edit"></i></button>
+              <button class="btn btn-danger btn-sm deleteRow"><i class="fa fa-trash"></i></button>
             </td>
           </tr>
         `);
@@ -289,20 +365,37 @@
       $('#fieldConfigModal').modal('hide');
     };
 
-    /* EDIT / DELETE */
     document.addEventListener('click', e => {
-
       if (e.target.closest('.editRow')) {
         editRow = e.target.closest('tr');
+        const cfg = JSON.parse(editRow.dataset.config);
 
-        $('#fieldDropzone').html(editRow.children[1].innerHTML);
+        $('#fieldDropzone').empty();
+        initFormTitle();
+        $('.form-title-input').val(cfg.title);
+        $('.form-description-input').val(cfg.description);
+        $('.form-directory-input').val(cfg.directory);
 
         $('#fieldList .drag').removeClass('disabled');
 
-        $('#fieldDropzone .drop-item').each(function () {
-          const code = $(this).data('code');
-          $(`.drag:contains("${code}")`).addClass('disabled');
-          bindDropItemEvents($(this)); // ⭐ rebind events
+        cfg.fields.forEach(f => {
+          $(`.drag:contains("${f.code}")`).addClass('disabled');
+
+          const field = $(`
+            <div class="drop-item p-2 mb-2"
+              data-code="${f.code}"
+              data-type="${f.type}">
+              <div class="d-flex align-items-center mb-1">
+                <strong class="field-title-text mr-2">${f.label}</strong>
+                <input class="form-control form-control-sm field-title-input d-none" value="${f.label}">
+                <button class="btn btn-sm btn-link edit-field-title"><i class="fa fa-edit"></i></button>
+              </div>
+              ${typeWiseFieldGenerator(f.code)}
+              <button class="btn btn-sm btn-outline-danger mt-2 remove">X</button>
+            </div>
+          `);
+          bindDropItemEvents(field);
+          $('#fieldDropzone').append(field);
         });
 
         $('#fieldConfigModal').modal('show');
