@@ -1,0 +1,45 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: ogusu
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: awsWebform
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-3
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:GetItem
+            - dynamodb:DeleteItem
+
+          Resource: arn:aws:dynamodb:ap-northeast-3:*:table/WebFormData
+
+functions:
+  saveOrUpdate:
+    handler: handler.saveOrUpdate
+    events:
+      - http:
+          path: submit
+          method: post
+          cors: true
+  deleteData:
+    handler: handler.deleteData
+    events:
+      - http:
+          path: item/{id}
+          method: delete
+          cors: true
+  getSingleItem:
+    handler: handler.getSingleItem
+    events:
+      - http:
+          path: item/{id}
+          method: get
+          cors: true
+
+
