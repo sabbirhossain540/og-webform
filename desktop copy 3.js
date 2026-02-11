@@ -90,18 +90,6 @@
         <label class="font-weight-bold">Description</label>
         <textarea class="form-control form-description-input"></textarea>
       </div>
-
-      <div class="form-title-wrapper mb-3">
-        <label class="font-weight-bold">
-          Api Key <span class="text-danger">*</span>
-        </label>
-        <input type="text"
-          class="form-control form-apiKey-input"
-          placeholder="Enter api key">
-        <small class="text-danger error-apikey d-none">
-          Api key is required
-        </small>
-      </div>
     `);
   }
 
@@ -194,35 +182,30 @@
     return result;
   }
 
+
+
   /* ================= Collect Config ================= */
 
   function collectFormConfig() {
     const title = $('.form-title-input').val().trim();
     const description = $('.form-description-input').val().trim();
-    const apiKey = $('.form-apiKey-input').val().trim();
     let directory = generateRandomCode(10);;
     if(editRow != null){
       directory = mainDirectory;
     }
+    
     const fields = [];
 
     let hasError = false;
 
     // reset previous errors
-    $('.error-title, .error-apikey').addClass('d-none');
-    $('.form-title-input, .form-apiKey-input').removeClass('is-invalid');
+    $('.error-title, .error-directory').addClass('d-none');
+    $('.form-title-input, .form-directory-input').removeClass('is-invalid');
 
     // Title validation
     if (!title) {
       $('.error-title').removeClass('d-none');
       $('.form-title-input').addClass('is-invalid');
-      hasError = true;
-    }
-
-    // Directory validation
-    if (!apiKey) {
-      $('.error-apikey').removeClass('d-none');
-      $('.form-apiKey-input').addClass('is-invalid');
       hasError = true;
     }
 
@@ -244,7 +227,6 @@
       title,
       description,
       directory,
-      apiKey,
       fields
     };
   }
@@ -283,85 +265,12 @@
   `;
 }
 
-async function awsDataStoreManagement(data) {
-  const body = {
-    title: data.title,
-    apiKey: data.apiKey,
-    kintoneAppId: kintone.app.getId(),
-    description: data.description,
-    directory: data.directory,
-    fields: data.fields
-  };
-
-  try {
-    const response = await fetch(
-      "https://1frg78a4ae.execute-api.ap-northeast-3.amazonaws.com/dev/submit",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error("API Error:", result);
-      return;
-    }
-
-    console.log("Success:", result);
-
-  } catch (error) {
-    console.error("Fetch failed:", error);
-    alert("❌ Network / CORS error occurred");
-  }
-}
-
-
-async function getDataByKintoneAppId(kintoneAppId) {
-  try {
-    const response = await fetch(
-      `https://1frg78a4ae.execute-api.ap-northeast-3.amazonaws.com/dev/app/${kintoneAppId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    // HTTP error handle
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Server Error: ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    console.log("Data received ✅:", data);
-
-    return data;
-
-  } catch (error) {
-    console.error("Fetch error ❌:", error.message);
-    alert("Failed to load data: " + error.message);
-    return null;
-  }
-}
-
-
-
 
   /* ================= Kintone ================= */
   kintone.events.on('app.record.index.show', async event => {
     if (document.getElementById('webformConfigBtn')) return event;
 
     const fields = await getFieldInfo();
-    let configData = await getDataByKintoneAppId(kintone.app.getId());
-
     const fieldHtml = fields.map(f =>
       `<div class="drag btn btn-light btn-block mb-2">${f}</div>`
     ).join('');
@@ -432,49 +341,10 @@ async function getDataByKintoneAppId(kintoneAppId) {
       $('#fieldConfigModal').modal('show');
     };
 
-    $(document).ready(function () {
-
-      
-      console.log(configData);
-      const cfg = {
-          "title": "test app",
-          "description": "",
-          "directory": "S7eZcC1kPk",
-          "apiKey": "xc87dad5da",
-          "fields": [
-              {
-                  "code": "更新者",
-                  "type": "MODIFIER",
-                  "label": "更新者"
-              },
-              {
-                  "code": "氏名",
-                  "type": "SINGLE_LINE_TEXT",
-                  "label": "氏名"
-              }
-          ]
-      };
-
-      rowIndex++;
-      $('#configTable').append(`
-        <tr data-config='${JSON.stringify(cfg)}'>
-          <td>${rowIndex}</td>
-          <td>${renderPreview(cfg)}</td>
-          <td>
-            <button class="btn btn-info btn-sm editRow"><i class="fa fa-edit"></i></button>
-            <button class="btn btn-danger btn-sm deleteRow"><i class="fa fa-trash"></i></button>
-          </td>
-        </tr>
-      `);
-      $('#fieldConfigModal').modal('hide');
-    });
-
     document.getElementById('saveField').onclick = () => {
       const cfg = collectFormConfig();
+      console.log(cfg);
       if (!cfg.fields.length) return alert('Add at least one field');
-      awsDataStoreManagement(cfg);
-
-
 
       if (editRow) {
         editRow.dataset.config = JSON.stringify(cfg);
@@ -505,7 +375,6 @@ async function getDataByKintoneAppId(kintoneAppId) {
         initFormTitle();
         $('.form-title-input').val(cfg.title);
         $('.form-description-input').val(cfg.description);
-        $('.form-apiKey-input').val(cfg.apiKey);
 
         $('#fieldList .drag').removeClass('disabled');
 

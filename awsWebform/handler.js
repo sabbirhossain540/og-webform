@@ -1,9 +1,15 @@
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { PutCommand, UpdateCommand, DeleteCommand, GetCommand, DynamoDBDocumentClient } = require("@aws-sdk/lib-dynamodb");
 const { randomUUID } = require("crypto");
+const { QueryCommand } = require("@aws-sdk/lib-dynamodb");
 
 const client = new DynamoDBClient({ region: "ap-northeast-3" });
 const ddb = DynamoDBDocumentClient.from(client);
+const crosObj = {
+      "Access-Control-Allow-Origin": "*", // or "*"
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT,DELETE"
+    };
 
 module.exports.saveOrUpdate = async (event) => {
   try {
@@ -11,27 +17,29 @@ module.exports.saveOrUpdate = async (event) => {
       ? JSON.parse(event.body)
       : event.body;
 
-    // UPDATE
+    const corsHeaders = crosObj;
+
     if (body.id) {
       const params = {
         TableName: "WebFormData",
         Key: { id: body.id },
         UpdateExpression: `
           SET 
-            #name = :name,
-            email = :email,
-            message = :message,
-            essential = :essential,
+            title = :title,
+            apiKey = :apiKey,
+            description = :description,
+            kintoneAppId = :kintoneAppId,
+            directory = :directory,
+            fields = :fields,
             updatedAt = :updatedAt
         `,
-        ExpressionAttributeNames: {
-          "#name": "name"
-        },
         ExpressionAttributeValues: {
-          ":name": body.name,
-          ":email": body.email,
-          ":message": body.message,
-          ":essential": body.essential,
+          ":title": body.title,
+          ":apiKey": body.apiKey,
+          ":description": body.description,
+          ":kintoneAppId" : body.kintoneAppId,
+          ":directory": body.directory,
+          ":fields": body.fields,
           ":updatedAt": new Date().toISOString()
         },
         ReturnValues: "ALL_NEW"
@@ -41,8 +49,9 @@ module.exports.saveOrUpdate = async (event) => {
 
       return {
         statusCode: 200,
+        headers: corsHeaders,
         body: JSON.stringify({
-          message: "Data updated successfully ✅",
+          message: "Data updated successfully",
           data: result.Attributes
         })
       };
@@ -53,10 +62,12 @@ module.exports.saveOrUpdate = async (event) => {
       TableName: "WebFormData",
       Item: {
         id: randomUUID(),
-        name: body.name,
-        email: body.email,
-        message: body.message,
-        essential: body.essential,
+        title: body.title,
+        apiKey: body.apiKey,
+        kintoneAppId: body.kintoneAppId,
+        description: body.description,
+        directory: body.directory,
+        fields: body.fields,
         createdAt: new Date().toISOString()
       }
     };
@@ -65,17 +76,69 @@ module.exports.saveOrUpdate = async (event) => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Data saved successfully ✅" })
+      headers: corsHeaders,
+      body: JSON.stringify({ message: "Data saved successfully" })
     };
 
   } catch (err) {
     console.error(err);
     return {
       statusCode: 500,
+      headers: crosObj,
       body: JSON.stringify({ error: err.message })
     };
   }
 };
+
+
+module.exports.getByKintoneAppId = async (event) => {
+  try {
+    const kintoneAppId = event.pathParameters?.kintoneAppId;
+    const corsHeaders = crosObj;
+
+    if (!kintoneAppId) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "kintoneAppId is required" })
+      };
+    }
+
+    const params = {
+      TableName: "WebFormData",
+      IndexName: "kintoneAppId-index", // GSI name
+      KeyConditionExpression: "kintoneAppId = :appId",
+      ExpressionAttributeValues: {
+        ":appId": Number(kintoneAppId) // important যদি Number type হয়
+      }
+    };
+
+    const result = await ddb.send(new QueryCommand(params));
+
+    if (!result.Items || result.Items.length === 0) {
+      return {
+        statusCode: 404,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "No items found" })
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify(result.Items)
+    };
+
+  } catch (err) {
+    console.error(err);
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: err.message })
+    };
+  }
+};
+
 
 //For get single Item
 module.exports.getSingleItem = async (event) => {

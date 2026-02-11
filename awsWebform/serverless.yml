@@ -16,8 +16,10 @@ provider:
             - dynamodb:UpdateItem
             - dynamodb:GetItem
             - dynamodb:DeleteItem
-
-          Resource: arn:aws:dynamodb:ap-northeast-3:*:table/WebFormData
+            - dynamodb:Query   
+          Resource:
+            - arn:aws:dynamodb:ap-northeast-3:*:table/WebFormData
+            - arn:aws:dynamodb:ap-northeast-3:*:table/WebFormData/index/* 
 
 functions:
   saveOrUpdate:
@@ -27,6 +29,7 @@ functions:
           path: submit
           method: post
           cors: true
+
   deleteData:
     handler: handler.deleteData
     events:
@@ -34,6 +37,7 @@ functions:
           path: item/{id}
           method: delete
           cors: true
+
   getSingleItem:
     handler: handler.getSingleItem
     events:
@@ -42,4 +46,11 @@ functions:
           method: get
           cors: true
 
+  getByKintoneAppId:
+    handler: handler.getByKintoneAppId
+    events:
+      - http:
+          path: app/{kintoneAppId}
+          method: get
+          cors: true
 
