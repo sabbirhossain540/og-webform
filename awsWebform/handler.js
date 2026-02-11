@@ -6,7 +6,7 @@ const { QueryCommand } = require("@aws-sdk/lib-dynamodb");
 const client = new DynamoDBClient({ region: "ap-northeast-3" });
 const ddb = DynamoDBDocumentClient.from(client);
 const crosObj = {
-      "Access-Control-Allow-Origin": "*", // or "*"
+      "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "Content-Type",
       "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT,DELETE"
     };
@@ -106,10 +106,10 @@ module.exports.getByKintoneAppId = async (event) => {
 
     const params = {
       TableName: "WebFormData",
-      IndexName: "kintoneAppId-index", // GSI name
+      IndexName: "kintoneAppId-index",
       KeyConditionExpression: "kintoneAppId = :appId",
       ExpressionAttributeValues: {
-        ":appId": Number(kintoneAppId) // important যদি Number type হয়
+        ":appId": Number(kintoneAppId)
       }
     };
 
@@ -184,7 +184,6 @@ module.exports.getSingleItem = async (event) => {
 //For Dekete record
 module.exports.deleteData = async (event) => {
   try {
-    // id path param অথবা body থেকে নাও
     const id =
       event.pathParameters?.id ||
       (event.body && JSON.parse(event.body).id);
@@ -199,20 +198,19 @@ module.exports.deleteData = async (event) => {
     const params = {
       TableName: "WebFormData",
       Key: { id },
-      ConditionExpression: "attribute_exists(id)" // না থাকলে error দেবে
+      ConditionExpression: "attribute_exists(id)"
     };
 
     await ddb.send(new DeleteCommand(params));
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Data deleted successfully ✅" })
+      body: JSON.stringify({ message: "Data deleted successfully" })
     };
 
   } catch (err) {
     console.error(err);
 
-    // Item না থাকলে
     if (err.name === "ConditionalCheckFailedException") {
       return {
         statusCode: 404,

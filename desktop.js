@@ -226,7 +226,6 @@
       hasError = true;
     }
 
-    // যদি error থাকে → data return করবে না
     if (hasError) {
       return null;
     }
@@ -341,18 +340,16 @@ async function getDataByKintoneAppId(kintoneAppId) {
 
     const data = await response.json();
 
-    console.log("Data received ✅:", data);
+    console.log("Data received:", data);
 
     return data;
 
   } catch (error) {
-    console.error("Fetch error ❌:", error.message);
+    console.error("Fetch error :", error.message);
     alert("Failed to load data: " + error.message);
     return null;
   }
 }
-
-
 
 
   /* ================= Kintone ================= */
