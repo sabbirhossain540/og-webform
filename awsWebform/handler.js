@@ -18,32 +18,36 @@ module.exports.saveOrUpdate = async (event) => {
       : event.body;
 
     const corsHeaders = crosObj;
-
+    console.log(body.id);
     if (body.id) {
       const params = {
-        TableName: "WebFormData",
-        Key: { id: body.id },
-        UpdateExpression: `
-          SET 
-            title = :title,
-            apiKey = :apiKey,
-            description = :description,
-            kintoneAppId = :kintoneAppId,
-            directory = :directory,
-            fields = :fields,
-            updatedAt = :updatedAt
-        `,
-        ExpressionAttributeValues: {
-          ":title": body.title,
-          ":apiKey": body.apiKey,
-          ":description": body.description,
-          ":kintoneAppId" : body.kintoneAppId,
-          ":directory": body.directory,
-          ":fields": body.fields,
-          ":updatedAt": new Date().toISOString()
-        },
-        ReturnValues: "ALL_NEW"
-      };
+      TableName: "WebFormData",
+      Key: { id: body.id },
+      UpdateExpression: `
+        SET 
+          title = :title,
+          apiKey = :apiKey,
+          description = :description,
+          kintoneAppId = :kintoneAppId,
+          directory = :directory,
+          #fields = :fields,
+          updatedAt = :updatedAt
+      `,
+      ExpressionAttributeNames: {
+        "#fields": "fields"
+      },
+      ExpressionAttributeValues: {
+        ":title": body.title,
+        ":apiKey": body.apiKey,
+        ":description": body.description,
+        ":kintoneAppId": body.kintoneAppId,
+        ":directory": body.directory,
+        ":fields": body.fields,
+        ":updatedAt": new Date().toISOString()
+      },
+      ReturnValues: "ALL_NEW"
+    };
+
 
       const result = await ddb.send(new UpdateCommand(params));
 
@@ -205,6 +209,7 @@ module.exports.deleteData = async (event) => {
 
     return {
       statusCode: 200,
+      headers: crosObj,
       body: JSON.stringify({ message: "Data deleted successfully" })
     };
 
@@ -214,12 +219,14 @@ module.exports.deleteData = async (event) => {
     if (err.name === "ConditionalCheckFailedException") {
       return {
         statusCode: 404,
+        headers: crosObj,
         body: JSON.stringify({ error: "Item not found" })
       };
     }
 
     return {
       statusCode: 500,
+      headers: crosObj,
       body: JSON.stringify({ error: err.message })
     };
   }

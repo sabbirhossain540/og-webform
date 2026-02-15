@@ -23,7 +23,6 @@
   let rowIndex = 0;
   let editRow = null;
   let mainDirectory;
-  let editItemId;
 
   /* ================= Field Info ================= */
   function getFieldInfo() {
@@ -283,7 +282,7 @@
   `;
 }
 
-async function awsDataStoreManagement(data, editItemId) {
+async function awsDataStoreManagement(data) {
   const body = {
     title: data.title,
     apiKey: data.apiKey,
@@ -293,16 +292,12 @@ async function awsDataStoreManagement(data, editItemId) {
     fields: data.fields
   };
 
-  if(editItemId != undefined){
-    body.id = editItemId;
-  }
-
   try {
     const response = await fetch(
       "https://1frg78a4ae.execute-api.ap-northeast-3.amazonaws.com/dev/submit",
       {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify(body)
@@ -460,36 +455,32 @@ async function handleDeleteItem(id) {
       $('#fieldConfigModal').modal('show');
     };
 
+    $(document).ready(function () {
 
-    console.log(configData);
+      
+      console.log(configData);
 
-    if(configData != null){
-        $(document).ready(function () {
-        rowIndex++;
-        configData.map((elem) =>{
-          $('#configTable').append(`
-            <tr data-config='${JSON.stringify(elem)}'>
-              <td>${rowIndex}</td>
-              <td>${renderPreview(elem)}</td>
-              <td>
-                <button class="btn btn-info btn-sm editRow" data-id=${elem.id}><i class="fa fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm deleteRow" data-id=${elem.id}><i class="fa fa-trash"></i></button>
-              </td>
-            </tr>
-          `);
-        });
-
-        $('#fieldConfigModal').modal('hide');
+      rowIndex++;
+      configData.map((elem) =>{
+        $('#configTable').append(`
+          <tr data-config='${JSON.stringify(elem)}'>
+            <td>${rowIndex}</td>
+            <td>${renderPreview(elem)}</td>
+            <td>
+              <button class="btn btn-info btn-sm editRow" data-id=${elem.id}><i class="fa fa-edit"></i></button>
+              <button class="btn btn-danger btn-sm deleteRow" data-id=${elem.id}><i class="fa fa-trash"></i></button>
+            </td>
+          </tr>
+        `);
       });
 
-    }
-    
+      $('#fieldConfigModal').modal('hide');
+    });
 
     document.getElementById('saveField').onclick = () => {
       const cfg = collectFormConfig();
       if (!cfg.fields.length) return alert('Add at least one field');
-      console.log(editItemId);
-      awsDataStoreManagement(cfg, editItemId);
+      awsDataStoreManagement(cfg);
 
 
 
@@ -517,7 +508,6 @@ async function handleDeleteItem(id) {
         editRow = e.target.closest('tr');
         const cfg = JSON.parse(editRow.dataset.config);
         mainDirectory = cfg.directory;
-        editItemId = cfg.id;
 
         $('#fieldDropzone').empty();
         initFormTitle();

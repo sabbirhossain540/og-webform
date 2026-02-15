@@ -1,14 +1,14 @@
 {
     "manifest_version": 1,
-    "version": "10.0.1",
+    "version": "1.0",
     "type": "APP",
     "name": {
-        "en": "OGUSU Bulk Approval (一括承認)"
+        "en": "Ogusu Webform (Development in Progress...)"
     },
     "description": {
-        "en": "承認を一括で処理するためのプラグインです。"
+        "en": "Later ....."
     },
-    "icon": "bIcon.png",
+    "icon": "ogIcon.png",
     "desktop": {
         "js": [
             "desktop.js",
@@ -23,13 +23,20 @@
     "config": {
     "html": "config/config.html",
     "js": [
-      "config/config.js"
+      "config/config.js",
+      "config/lib/js/bootstrap.min.js",
+      "config/lib/js/jquery.min.js",
+      "config/lib/js/jquery.slim.js",
+      "config/lib/js/jqueryUI.js",
+      "config/lib/js/sweetalert.min.js"
     ],
     "css": [
       "config/51-modern-default.css",
       "config/config.css",
-      "config/custom.css"
-    ],
-    "required_params": ["searchPluginStatus"]
+      "config/custom.css",
+      "config/lib/css/bootstrap.min.css",
+      "config/lib/css/fontawesome.min.css",
+      "config/lib/css/jqueryUI.css"
+    ]
     }
 }
