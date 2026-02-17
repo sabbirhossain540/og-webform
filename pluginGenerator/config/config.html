@@ -2,58 +2,29 @@
 <html>
 <head>
   <meta charset="UTF-8">
-
-  <!-- Bootstrap -->
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-
-  <!-- jQuery + jQuery UI -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-
-  <style>
-    .field-item {
-      padding: 8px;
-      margin-bottom: 5px;
-      background: #f8f9fa;
-      border: 1px solid #ccc;
-      cursor: move;
-    }
-
-    #dropzone {
-      min-height: 200px;
-      border: 2px dashed #007bff;
-      padding: 10px;
-      background: #fdfdfd;
-    }
-
-    .dropped-item {
-      padding: 8px;
-      margin-bottom: 5px;
-      background: #e9ecef;
-      border: 1px solid #999;
-    }
-  </style>
-
 </head>
 
 <body>
 
-<div class="container mt-3">
+<div class="container" style="padding:20px;">
 
-  <button id="addRowBtn" class="btn btn-success btn-sm mb-2">
+  <h4>Webform Builder form</h4>
+
+  <button id="addRowBtn" class="btn btn-success btn-sm mb-3">
     Add Form
   </button>
 
-  <table class="table table-bordered table-sm">
+  <table id="formTable" class="table table-bordered table-sm">
     <thead>
       <tr>
         <th>#</th>
-        <th>Preview</th>
-        <th>Action</th>
+        <th>Edit Data</th>
+        <th>Main Data</th>
+        <th>Form Preview</th>
+        <th width="100">Action</th>
       </tr>
     </thead>
-    <tbody id="configTable"></tbody>
+    <tbody></tbody>
   </table>
 
   <button id="saveConfig" class="btn btn-primary mt-3">
@@ -65,11 +36,11 @@
 <!-- ================= MODAL ================= -->
 
 <div class="modal fade" id="formBuilderModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl" style="max-width:95%;">
     <div class="modal-content">
 
       <div class="modal-header">
-        <h5 class="modal-title">Form Builder</h5>
+        <h5 class="modal-title">🌐 Webform Configuration</h5>
         <button type="button" class="close" data-dismiss="modal">
           &times;
         </button>
@@ -79,17 +50,18 @@
 
         <div class="row">
 
-          <!-- LEFT: Draggable Fields -->
+          <!-- LEFT SIDE -->
           <div class="col-md-4">
             <h6>Available Fields</h6>
+
             <div id="fieldList">
               <div class="field-item" data-type="text">Text Field</div>
+              <div class="field-item" data-type="number">Number Field</div>
               <div class="field-item" data-type="textarea">Textarea</div>
-              <div class="field-item" data-type="number">Number</div>
             </div>
           </div>
 
-          <!-- RIGHT: Drop Zone -->
+          <!-- RIGHT SIDE -->
           <div class="col-md-8">
             <h6>Form Preview</h6>
             <div id="dropzone"></div>
@@ -101,7 +73,7 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" data-dismiss="modal">
-          Close
+          Cancel
         </button>
         <button class="btn btn-primary" id="saveFormBtn">
           Save Form
@@ -111,11 +83,6 @@
     </div>
   </div>
 </div>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<script src="config.js"></script>
 
 </body>
 </html>

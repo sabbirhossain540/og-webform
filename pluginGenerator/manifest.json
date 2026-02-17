@@ -3,7 +3,7 @@
     "version": "1.0",
     "type": "APP",
     "name": {
-        "en": "Ogusu Webform (Development in Progress...)"
+        "en": "OGUSU Webform (Development in Progress...)"
     },
     "description": {
         "en": "Later ....."
@@ -23,20 +23,19 @@
     "config": {
     "html": "config/config.html",
     "js": [
-      "config/config.js",
-      "config/lib/js/bootstrap.min.js",
-      "config/lib/js/jquery.min.js",
-      "config/lib/js/jquery.slim.js",
+      "config/test/js/jquery.min.js",
       "config/lib/js/jqueryUI.js",
-      "config/lib/js/sweetalert.min.js"
+      "config/test/js/bootstrap.min.js",
+      "config/test/js/jqueryDatatable.min.js",
+      "config/test/js/jqueybootstarpDatatable.min.js",
+      "config/test/js/config.js"
     ],
     "css": [
-      "config/51-modern-default.css",
-      "config/config.css",
-      "config/custom.css",
-      "config/lib/css/bootstrap.min.css",
-      "config/lib/css/fontawesome.min.css",
-      "config/lib/css/jqueryUI.css"
+      "config/test/css/bootstrap.min.css",
+      "config/test/css/boorstrapDatatable.min.css",
+      "config/lib/css/jqueryUI.css",
+      "config/test/css/fontAwesome.css",
+      "config/test/css/config.css"
     ]
     }
 }
