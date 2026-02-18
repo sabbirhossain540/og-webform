@@ -179,7 +179,7 @@
             <div class="preview-row">
               <strong>URL:</strong> 
               <a href="${mainData.url}" target="_blank">
-                ${mainData.url || 'www.ogusu.com/webform'}
+                ${mainData.appUrl || 'none'}
               </a>
             </div>
 
@@ -213,6 +213,7 @@
             "apiKey": element.apiKey,
             "description": element.description,
             "title": element.title,
+            "appUrl": element.appUrl,
             "id": element.id,
             "directory": element.directory
           };
@@ -243,9 +244,9 @@
       // Clear all disabled first
       $('.field-item').removeClass('disabled-field');
 
-      addFieldToDropzone('app_title', 'SINGLE_LINE_TEXT', 'Title', false, 'app_title_input');
+      addFieldToDropzone('app_title', 'SINGLE_LINE_TEXT', 'Title *', false, 'app_title_input');
       addFieldToDropzone('description', 'MULTI_LINE_TEXT', 'Description', false, 'app_description_input');
-      addFieldToDropzone('api_key', 'SINGLE_LINE_TEXT', 'API Key', false, 'app_api_key_input');
+      addFieldToDropzone('api_key', 'SINGLE_LINE_TEXT', 'API Key *', false, 'app_api_key_input');
       $('#dropzone').append('<div class="text-muted mt-1 mb-1">Drag available field and drop it here.</div>');
 
       $('#formBuilderModal').modal('show');
@@ -264,6 +265,13 @@
           </span>
       ` : '';
 
+      const editButton = deleteOption ? `
+          <span class="edit-field text-primary ml-1"
+                    style="cursor:pointer;font-size:14px;">
+                    ✏️
+              </span>
+      ` : '';
+
       const fieldHTML = `
         <div class="dropped-item mb-3 p-3 border rounded bg-light"
             data-code="${code}"
@@ -277,10 +285,7 @@
                 ${label}
               </span>
 
-              <span class="edit-field text-primary ml-1"
-                    style="cursor:pointer;font-size:14px;">
-                    ✏️
-              </span>
+              ${editButton}
 
               <input type="text"
                     class="field-input form-control form-control-sm ml-1"
@@ -472,6 +477,31 @@
 
 
       $('#saveFormBtn').click(function () {
+         // Remove old errors
+          $('.validation-error').remove();
+          $('.is-invalid').removeClass('is-invalid');
+
+          let isValid = true;
+
+          const titleInput = $('.app_title_input');
+          const apiKeyInput = $('.app_api_key_input');
+
+          if (!titleInput.val().trim()) {
+            titleInput.addClass('is-invalid');
+            titleInput.after('<div class="validation-error text-danger small mt-1">Title is required</div>');
+            isValid = false;
+          }
+
+          if (!apiKeyInput.val().trim()) {
+            apiKeyInput.addClass('is-invalid');
+            apiKeyInput.after('<div class="validation-error text-danger small mt-1">API Key is required</div>');
+            isValid = false;
+          }
+
+          if (!isValid) {
+            return; // Stop form save
+          }
+
         let fields = [];
         let editField = [];
         
@@ -594,9 +624,9 @@
         // Enable all left panel fields first
         $('.field-item').removeClass('disabled-field');
 
-        addFieldToDropzone('app_title', 'SINGLE_LINE_TEXT', 'Title', false, 'app_title_input');
+        addFieldToDropzone('app_title', 'SINGLE_LINE_TEXT', 'Title *', false, 'app_title_input');
         addFieldToDropzone('description', 'MULTI_LINE_TEXT', 'Description', false, 'app_description_input');
-        addFieldToDropzone('api_key', 'SINGLE_LINE_TEXT', 'API Key', false, 'app_api_key_input');
+        addFieldToDropzone('api_key', 'SINGLE_LINE_TEXT', 'API Key *', false, 'app_api_key_input');
 
         // Re-add saved fields
         fields.forEach(field => {

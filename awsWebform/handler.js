@@ -17,6 +17,8 @@ module.exports.saveOrUpdate = async (event) => {
       ? JSON.parse(event.body)
       : event.body;
 
+    const appUrl = "https://ogusutest.s3.us-east-1.amazonaws.com/index.html";
+
     const corsHeaders = crosObj;
     console.log(body.id);
     if (body.id) {
@@ -68,6 +70,7 @@ module.exports.saveOrUpdate = async (event) => {
         id: randomUUID(),
         title: body.title,
         apiKey: body.apiKey,
+        appUrl: appUrl,
         kintoneAppId: body.kintoneAppId,
         description: body.description,
         directory: body.directory,
