@@ -12,6 +12,7 @@ const crosObj = {
     };
 
 module.exports.saveOrUpdate = async (event) => {
+  console.log(event);
   try {
     const body = typeof event.body === "string"
       ? JSON.parse(event.body)
@@ -20,7 +21,7 @@ module.exports.saveOrUpdate = async (event) => {
     const appUrl = "https://ogusutest.s3.us-east-1.amazonaws.com/index.html";
 
     const corsHeaders = crosObj;
-    console.log(body.id);
+    console.log(body);
     if (body.id) {
       const params = {
       TableName: "WebFormData",
@@ -33,6 +34,7 @@ module.exports.saveOrUpdate = async (event) => {
           kintoneAppId = :kintoneAppId,
           directory = :directory,
           #fields = :fields,
+          mainFieldProperties = :mainFieldProperties,
           updatedAt = :updatedAt
       `,
       ExpressionAttributeNames: {
@@ -45,6 +47,7 @@ module.exports.saveOrUpdate = async (event) => {
         ":kintoneAppId": body.kintoneAppId,
         ":directory": body.directory,
         ":fields": body.fields,
+        ":mainFieldProperties": body.mainFieldProperties,
         ":updatedAt": new Date().toISOString()
       },
       ReturnValues: "ALL_NEW"
@@ -75,6 +78,7 @@ module.exports.saveOrUpdate = async (event) => {
         description: body.description,
         directory: body.directory,
         fields: body.fields,
+        mainFieldProperties: body.mainFieldProperties,
         createdAt: new Date().toISOString()
       }
     };

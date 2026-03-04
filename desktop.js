@@ -8,6 +8,169 @@
   document.head.appendChild(fa);
 
   /* ================= CSS ================= */
+
+function getFieldByCode(fieldsArray, code) {
+  let searchingData = fieldsArray.find(field => field.code === code) || null;
+  return searchingData;
+}
+
+    function creatFieldSign(type, code = "") {
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "d-flex align-items-center gap-2";
+
+        const icon = document.createElement("span");
+        icon.style.fontSize = "18px";
+
+        let fieldElement;
+
+        switch (type) {
+
+          case "USER_SELECT":
+            icon.innerText = "🧑‍💼";
+            fieldElement = document.createElement("select");
+            fieldElement.className = "form-control mt-1";
+            fieldElement.innerHTML = `<option>Select ${code}</option>`;
+            fieldElement.disabled = true;   // 🔥 readonly alternative
+            break;
+
+          case "EDITOR":
+          case "RICH_TEXT":
+          case "MULTI_LINE_TEXT":
+            icon.innerText = "📝";
+            fieldElement = document.createElement("textarea");
+            fieldElement.className = "form-control mt-1";
+            fieldElement.rows = 2;
+            fieldElement.readOnly = true;
+            break;
+
+          case "DATE":
+          case "DATETIME":
+          case "TIME":
+            icon.innerText = "📅";
+            fieldElement = document.createElement("input");
+            fieldElement.type = "date";
+            fieldElement.className = "form-control mt-1";
+            fieldElement.readOnly = true;
+            break;
+
+          case "NUMBER":
+            icon.innerText = "🔢";
+            fieldElement = document.createElement("input");
+            fieldElement.type = "number";
+            fieldElement.className = "form-control mt-1";
+            fieldElement.readOnly = true;
+            break;
+
+          case "FILE":
+            icon.innerText = "📎";
+            fieldElement = document.createElement("input");
+            fieldElement.type = "file";
+            fieldElement.className = "form-control mt-1";
+            fieldElement.disabled = true;
+            break;
+
+          case "DROP_DOWN":
+          case "CHECK_BOX":
+          case "MULTI_SELECT":
+          case "CATEGORY":
+            icon.innerText = "📂";
+            fieldElement = document.createElement("select");
+            fieldElement.className = "form-control mt-1";
+            fieldElement.innerHTML = `<option>Select ${code}</option>`;
+            fieldElement.disabled = true;
+            break;
+
+          default:
+            icon.innerText = "🔤";
+            fieldElement = document.createElement("input");
+            fieldElement.type = "text";
+            fieldElement.className = "form-control mt-1";
+            fieldElement.readOnly = true;
+        }
+
+        wrapper.appendChild(icon);
+        wrapper.appendChild(fieldElement);
+
+        return wrapper;
+      }
+
+
+function subTableGenerator(code) {
+    // Wrapper div create
+    const wrapper = document.createElement("div");
+    wrapper.className = "container mt-2";
+
+    // Table
+    const table = document.createElement("table");
+    table.className = "table table-bordered";
+
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    const getFieldProperties = getFieldByCode(fieldProperties, code);
+
+    // Header create
+    Object.values(getFieldProperties.fields).forEach(field => {
+      const th = document.createElement("th");
+      th.innerText = field.label;
+      headRow.appendChild(th);
+    });
+
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    // Body
+    const tbody = document.createElement("tbody");
+    table.appendChild(tbody);
+
+    wrapper.appendChild(table);
+
+    // Add Row Function
+    function addRow() {
+      const tr = document.createElement("tr");
+
+      Object.values(getFieldProperties.fields).forEach(field => {
+        const td = document.createElement("td");
+        td.appendChild(creatFieldSign(field.type));
+        tr.appendChild(td);
+      });
+
+      const actionTd = document.createElement("td");
+      actionTd.style.setProperty("min-width", "95px", "important");
+
+      const addBtn = document.createElement("button");
+      addBtn.className = "btn btn-info btn-sm mr-2 button-style";
+      addBtn.innerText = "⊕";
+
+      actionTd.appendChild(addBtn);
+      tr.appendChild(actionTd);
+
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "btn btn-danger btn-sm button-style";
+      removeBtn.innerText = "⊖";
+      removeBtn.onclick = () => tr.remove();
+
+      actionTd.appendChild(removeBtn);
+      tr.appendChild(actionTd);
+
+      
+
+      tbody.appendChild(tr);
+    }
+
+    // Initial row
+    addRow();
+
+    return wrapper;
+}
+
+  /*End Dynamic Table */
+
+
+
+
+  
+  
   const style = document.createElement('style');
   style.innerHTML = `
     .custom-modal .modal-body { max-height:75vh; overflow:hidden; }
@@ -50,9 +213,15 @@
     return f ? f.type : '';
   }
 
+  // function subTableGenerator(code){
+  //    const tableProperty = fieldProperties.find(x => x.code === code);
+  //    console.log(tableProperty);
+  // }
+
   /* ================= Field Generator ================= */
-  function typeWiseFieldGenerator(code) {
+  function typeWiseFieldGenerator(code) {      
     const type = fieldTypeCheck(code);
+    console.log(type);
 
     if (type === 'EDITOR') {
       return `<textarea class="form-control mt-1" rows="2"></textarea>`;
@@ -64,6 +233,11 @@
 
     if (['CHECK_BOX', 'MULTI_SELECT', 'CATEGORY', 'USER_SELECT'].includes(type)) {
       return `<select class="form-control mt-1"><option>Select ${code}</option></select>`;
+    }
+
+    if(type == 'SUBTABLE'){
+      //return subTableGenerator(tableConfig);
+      return `<div class="subtable-container"></div>`;
     }
 
     return `<input type="text" class="form-control mt-1">`;
@@ -153,6 +327,29 @@
         const type = fieldTypeCheck(code);
         ui.draggable.addClass('disabled');
 
+        // const field = $(`
+        //   <div class="drop-item p-2 mb-2"
+        //     data-code="${code}"
+        //     data-type="${type}">
+
+        //     <div class="d-flex align-items-center mb-1">
+        //       <strong class="field-title-text mr-2">${code}</strong>
+
+        //       <input type="text"
+        //         class="form-control form-control-sm field-title-input d-none"
+        //         value="${code}"
+        //         style="width:160px">
+
+        //       <button class="btn btn-sm btn-link edit-field-title">
+        //         <i class="fa fa-edit"></i>
+        //       </button>
+        //     </div>
+
+        //     ${typeWiseFieldGenerator(code)}
+
+        //     <button class="btn btn-sm btn-outline-danger mt-2 remove">X</button>
+        //   </div>
+        // `);
         const field = $(`
           <div class="drop-item p-2 mb-2"
             data-code="${code}"
@@ -160,12 +357,10 @@
 
             <div class="d-flex align-items-center mb-1">
               <strong class="field-title-text mr-2">${code}</strong>
-
               <input type="text"
                 class="form-control form-control-sm field-title-input d-none"
                 value="${code}"
                 style="width:160px">
-
               <button class="btn btn-sm btn-link edit-field-title">
                 <i class="fa fa-edit"></i>
               </button>
@@ -177,6 +372,10 @@
           </div>
         `);
 
+        if (type === 'SUBTABLE') {
+          const subTableElement = subTableGenerator(code);
+          field.find('.subtable-container').append(subTableElement);
+        }
         bindDropItemEvents(field);
         $(this).append(field);
       }
@@ -206,6 +405,7 @@
       directory = mainDirectory;
     }
     const fields = [];
+    const mainFieldProperties = [];
 
     let hasError = false;
 
@@ -233,6 +433,7 @@
 
     // fields collect
     $('#fieldDropzone .drop-item').each(function () {
+      mainFieldProperties.push(getFieldByCode(fieldProperties, $(this).data('code')));
       fields.push({
         code: $(this).data('code'),
         type: $(this).data('type'),
@@ -245,7 +446,8 @@
       description,
       directory,
       apiKey,
-      fields
+      fields,
+      mainFieldProperties
     };
   }
 
@@ -271,7 +473,7 @@
     </div>
 
     <div class="preview-fields">
-      ${cfg.fields.map(f => `
+      ${cfg.fields.map(f => `    
         <div class="mt-3">
           <label class="font-weight-bold d-block mb-1">
             ${f.label}
@@ -290,7 +492,8 @@ async function awsDataStoreManagement(data, editItemId) {
     kintoneAppId: kintone.app.getId(),
     description: data.description,
     directory: data.directory,
-    fields: data.fields
+    fields: data.fields,
+    mainFieldProperties: data.mainFieldProperties
   };
 
   if(editItemId != undefined){
@@ -388,6 +591,7 @@ async function handleDeleteItem(id) {
     if (document.getElementById('webformConfigBtn')) return event;
 
     const fields = await getFieldInfo();
+    //console.log(fieldProperties);
     let configData = await getDataByKintoneAppId(kintone.app.getId());
 
     const fieldHtml = fields.map(f =>
@@ -461,7 +665,7 @@ async function handleDeleteItem(id) {
     };
 
 
-    console.log(configData);
+   // console.log(configData);
 
     if(configData != null){
         $(document).ready(function () {
@@ -487,6 +691,7 @@ async function handleDeleteItem(id) {
 
     document.getElementById('saveField').onclick = () => {
       const cfg = collectFormConfig();
+      console.log(cfg);
       if (!cfg.fields.length) return alert('Add at least one field');
       console.log(editItemId);
       awsDataStoreManagement(cfg, editItemId);
@@ -543,6 +748,10 @@ async function handleDeleteItem(id) {
               <button class="btn btn-sm btn-outline-danger mt-2 remove">X</button>
             </div>
           `);
+          if (f.type === 'SUBTABLE') {
+            const subTableElement = subTableGenerator(f.code);
+            field.find('.subtable-container').append(subTableElement);
+          }
           bindDropItemEvents(field);
           $('#fieldDropzone').append(field);
         });

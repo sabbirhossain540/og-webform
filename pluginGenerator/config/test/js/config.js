@@ -52,22 +52,186 @@
     /* --------------------------------
        Generate Input by Type
     -------------------------------- */
-    function generateInput(type, customClass = '') {
+    function generateInput(type, customClass = '', readProperty) {
 
-      if (type === 'SINGLE_LINE_TEXT') {
-        return `<input type="text" class="form-control ${customClass}">`;
+      if (type === 'EDITOR') {
+        return `<textarea class="form-control mt-1 ${customClass}" rows="2" ${readProperty}></textarea>`;
       }
 
-      if (type === 'NUMBER') {
-        return `<input type="number" class="form-control ${customClass}">`;
+      if (['DATE', 'DATETIME', 'TIME'].includes(type)) {
+        return `<input type="date" class="form-control ${customClass} mt-1" ${readProperty}>`;
       }
 
-      if (type === 'MULTI_LINE_TEXT') {
-        return `<textarea class="form-control ${customClass}" rows="3"></textarea>`;
+      if (['CHECK_BOX', 'MULTI_SELECT', 'CATEGORY', 'USER_SELECT'].includes(type)) {
+        return `<select class="form-control ${customClass} mt-1" ${readProperty}><option>Select Item</option></select>`;
       }
 
-      return `<input type="text" class="form-control ${customClass}">`;
+      if(type == 'SUBTABLE'){
+        return `<div class="subtable-container"></div>`;
+      }
+
+      return `<input type="text" class="form-control ${customClass}" ${readProperty}>`;
     }
+
+
+    //New (26/02/2026)
+    function getFieldByCode(fieldsArray, code) {
+      let searchingData = fieldsArray.find(field => field.code === code) || null;
+      return searchingData;
+    }
+
+        function creatFieldSign(type, code = "") {
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "d-flex align-items-center gap-2";
+
+            const icon = document.createElement("span");
+            icon.style.fontSize = "18px";
+
+            let fieldElement;
+
+            switch (type) {
+
+              case "USER_SELECT":
+                icon.innerText = "🧑‍💼";
+                fieldElement = document.createElement("select");
+                fieldElement.className = "form-control mt-1";
+                fieldElement.innerHTML = `<option>Select ${code}</option>`;
+                fieldElement.disabled = true;   // 🔥 readonly alternative
+                break;
+
+              case "EDITOR":
+              case "RICH_TEXT":
+              case "MULTI_LINE_TEXT":
+                icon.innerText = "📝";
+                fieldElement = document.createElement("textarea");
+                fieldElement.className = "form-control mt-1";
+                fieldElement.rows = 2;
+                fieldElement.readOnly = true;
+                break;
+
+              case "DATE":
+              case "DATETIME":
+              case "TIME":
+                icon.innerText = "📅";
+                fieldElement = document.createElement("input");
+                fieldElement.type = "date";
+                fieldElement.className = "form-control mt-1";
+                fieldElement.readOnly = true;
+                break;
+
+              case "NUMBER":
+                icon.innerText = "🔢";
+                fieldElement = document.createElement("input");
+                fieldElement.type = "number";
+                fieldElement.className = "form-control mt-1";
+                fieldElement.readOnly = true;
+                break;
+
+              case "FILE":
+                icon.innerText = "📎";
+                fieldElement = document.createElement("input");
+                fieldElement.type = "file";
+                fieldElement.className = "form-control mt-1";
+                fieldElement.disabled = true;
+                break;
+
+              case "DROP_DOWN":
+              case "CHECK_BOX":
+              case "MULTI_SELECT":
+              case "CATEGORY":
+                icon.innerText = "📂";
+                fieldElement = document.createElement("select");
+                fieldElement.className = "form-control mt-1";
+                fieldElement.innerHTML = `<option>Select ${code}</option>`;
+                fieldElement.disabled = true;
+                break;
+
+              default:
+                icon.innerText = "🔤";
+                fieldElement = document.createElement("input");
+                fieldElement.type = "text";
+                fieldElement.className = "form-control mt-1";
+                fieldElement.readOnly = true;
+            }
+
+            wrapper.appendChild(icon);
+            wrapper.appendChild(fieldElement);
+
+            return wrapper;
+          }
+
+
+    function subTableGenerator(code) {
+        // Wrapper div create
+        const wrapper = document.createElement("div");
+        wrapper.className = "container mt-2";
+
+        // Table
+        const table = document.createElement("table");
+        table.className = "table table-bordered";
+
+        const thead = document.createElement("thead");
+        const headRow = document.createElement("tr");
+        const getFieldProperties = getFieldByCode(fieldProperties, code);
+
+        // Header create
+        Object.values(getFieldProperties.fields).forEach(field => {
+          const th = document.createElement("th");
+          th.innerText = field.label;
+          headRow.appendChild(th);
+        });
+
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        // Body
+        const tbody = document.createElement("tbody");
+        table.appendChild(tbody);
+
+        wrapper.appendChild(table);
+
+        // Add Row Function
+        function addRow() {
+          const tr = document.createElement("tr");
+
+          Object.values(getFieldProperties.fields).forEach(field => {
+            const td = document.createElement("td");
+            td.appendChild(creatFieldSign(field.type));
+            tr.appendChild(td);
+          });
+
+          const actionTd = document.createElement("td");
+          actionTd.style.setProperty("min-width", "100px", "important");
+
+          const addBtn = document.createElement("button");
+          addBtn.className = "btn btn-info btn-sm mr-2 button-style";
+          addBtn.innerText = "⊕";
+
+          actionTd.appendChild(addBtn);
+          tr.appendChild(actionTd);
+
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "btn btn-danger btn-sm button-style";
+          removeBtn.innerText = "⊖";
+          removeBtn.onclick = () => tr.remove();
+
+          actionTd.appendChild(removeBtn);
+          tr.appendChild(actionTd);
+
+          
+
+          tbody.appendChild(tr);
+        }
+
+        // Initial row
+        addRow();
+
+        return wrapper;
+    }
+
+
+    //End (26/02/2026)
 
 
     /* --------------------------------
@@ -146,7 +310,7 @@
     }
 
     function generatePreviewCard(mainData, jsonString) {
-      console.log(mainData);
+      //console.log(mainData);
       const fields = JSON.parse(jsonString);
 
       let fieldsHTML = '';
@@ -244,16 +408,16 @@
       // Clear all disabled first
       $('.field-item').removeClass('disabled-field');
 
-      addFieldToDropzone('app_title', 'SINGLE_LINE_TEXT', 'Title *', false, 'app_title_input');
-      addFieldToDropzone('description', 'MULTI_LINE_TEXT', 'Description', false, 'app_description_input');
-      addFieldToDropzone('api_key', 'SINGLE_LINE_TEXT', 'API Key *', false, 'app_api_key_input');
+      addFieldToDropzone('app_title', 'SINGLE_LINE_TEXT', 'Title *', false, 'app_title_input', 'none');
+      addFieldToDropzone('description', 'EDITOR', 'Description', false, 'app_description_input', 'none');
+      addFieldToDropzone('api_key', 'SINGLE_LINE_TEXT', 'API Key *', false, 'app_api_key_input', 'none');
       $('#dropzone').append('<div class="text-muted mt-1 mb-1">Drag available field and drop it here.</div>');
 
       $('#formBuilderModal').modal('show');
     });
 
 
-    function addFieldToDropzone(code, type, label = code, deleteOption = true, customCluss = null) {
+    function addFieldToDropzone(code, type, label = code, deleteOption = true, customCluss = null, readProperty = 'readonly') {
 
       $('.field-item[data-code="' + code + '"]')
         .addClass('disabled-field');
@@ -299,15 +463,24 @@
           </div>
 
           <div class="form-group mb-0">
-            ${generateInput(type, customCluss)}
+            ${generateInput(type, customCluss, readProperty)}
+
+            
+
           </div>
 
         </div>
       `;
 
-      console.log(fieldHTML);
+      const fieldElement = $(fieldHTML);
+      if (type === 'SUBTABLE') { 
+          const subTableElement = subTableGenerator(code);
+          fieldElement.find('.subtable-container').append(subTableElement);
+        }
 
-      $('#dropzone').append(fieldHTML);
+      //console.log(fieldHTML);
+
+      $('#dropzone').append(fieldElement);
     }
 
     
@@ -415,7 +588,8 @@
           kintoneAppId: kintone.app.getId(),
           description: data.description,
           directory: data.directory,
-          fields: data.fields
+          fields: data.fields,
+          mainFieldProperties: data.mainFieldProperties
         };
 
         if(editItemId != undefined){
@@ -477,7 +651,7 @@
 
 
       $('#saveFormBtn').click(function () {
-         // Remove old errors
+         // Remove old errorsss
           $('.validation-error').remove();
           $('.is-invalid').removeClass('is-invalid');
 
@@ -504,6 +678,7 @@
 
         let fields = [];
         let editField = [];
+        let mainFieldProperties = [];
         
         let getDirectory = generateRandomCode();
 
@@ -512,7 +687,8 @@
           "description": $('.app_description_input').val(),
           "directory": getDirectory,
           "apiKey": $('.app_api_key_input').val(),
-          "fields": fields
+          "fields": fields,
+          "mainFieldProperties": mainFieldProperties
         }
 
         let mainData = {
@@ -535,6 +711,7 @@
             code !== "description" &&
             code !== "api_key"
           ) {
+            mainFieldProperties.push(getFieldByCode(fieldProperties, $(this).data('code')));
             fields.push({
               code: code,
               type: $(this).data('type'),
@@ -580,10 +757,11 @@
 
         }
 
-        console.log(editField);
-        console.log(fields);
+        // console.log(editField);
+        // console.log(fields);
+        // console.log(data);
 
-        awsDataStoreManagement(data, editItemId);
+        awsDataStoreManagement(data, editItemId, mainFieldProperties);
 
         $('#formBuilderModal').modal('hide');
       });
@@ -610,13 +788,13 @@
         const row = table.row($(this).parents('tr'));
         const rowData = row.data();
 
-        console.log(rowData);
+        //console.log(rowData);
 
         editRowIndex = row.index();
 
         const fields = JSON.parse(rowData[1]);
         const mainDataFields = JSON.parse(rowData[2]);
-        console.log(mainDataFields);
+        //console.log(mainDataFields);
 
         // Clear old dropzone
         $('#dropzone').empty();
@@ -624,13 +802,13 @@
         // Enable all left panel fields first
         $('.field-item').removeClass('disabled-field');
 
-        addFieldToDropzone('app_title', 'SINGLE_LINE_TEXT', 'Title *', false, 'app_title_input');
-        addFieldToDropzone('description', 'MULTI_LINE_TEXT', 'Description', false, 'app_description_input');
-        addFieldToDropzone('api_key', 'SINGLE_LINE_TEXT', 'API Key *', false, 'app_api_key_input');
+        addFieldToDropzone('app_title', 'SINGLE_LINE_TEXT', 'Title *', false, 'app_title_input', 'none');
+        addFieldToDropzone('description', 'EDITOR', 'Description', false, 'app_description_input' , 'none');
+        addFieldToDropzone('api_key', 'SINGLE_LINE_TEXT', 'API Key *', false, 'app_api_key_input', 'none');
 
         // Re-add saved fields
         fields.forEach(field => {
-          console.log(field);
+          //console.log(field);
           addFieldToDropzone(field.code, field.type, field.label);
         });
 
