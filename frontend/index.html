@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>S3 Website - Book List</title>
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+
+<h2 class="text-center mt-4">📚 Book List (Like + Infinite Scroll)</h2>
+
+<div class="container mt-3">
+  <!-- Search -->
+  <input
+    type="text"
+    id="searchInput"
+    class="form-control mb-3"
+    placeholder="Search by book title..."
+    onkeyup="searchBooks()"
+  />
+
+  <!-- Book Table -->
+  <table class="table table-bordered">
+    <thead class="thead-dark">
+      <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Like ❤️</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="bookTable"></tbody>
+  </table>
+
+  <p class="text-center" id="loading" style="display:none;">Loading more books...</p>
+</div>
+
+<script>
+  let books = [];
+  let page = 1;
+  let isLoading = false;
+
+  // Fetch books (pagination)
+  async function fetchBooks() {
+    if (isLoading) return;
+    isLoading = true;
+
+    document.getElementById("loading").style.display = "block";
+
+    const res = await fetch(`https://openlibrary.org/search.json?q=javascript&page=${page}`);
+    const data = await res.json();
+
+    const newBooks = data.docs.slice(0, 20).map((book, index) => ({
+      id: Date.now() + index,
+      title: book.title,
+      author: book.author_name ? book.author_name[0] : "Unknown",
+      likes: 0
+    }));
+
+    books = books.concat(newBooks);
+    renderBooks(books);
+
+    page++;
+    isLoading = false;
+    document.getElementById("loading").style.display = "none";
+  }
+
+  // Render table
+  function renderBooks(bookArray) {
+    const table = document.getElementById("bookTable");
+    table.innerHTML = "";
+
+    bookArray.forEach(book => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${book.title}</td>
+        <td>${book.author}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-warning" onclick="likeBook(${book.id})">
+            ❤️ ${book.likes}
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-danger" onclick="deleteBook(${book.id})">
+            Delete
+          </button>
+        </td>
+      `;
+
+      table.appendChild(row);
+    });
+  }
+
+  // Like button
+  function likeBook(id) {
+    const book = books.find(b => b.id === id);
+    if (book) {
+      book.likes++;
+      renderBooks(books);
+    }
+  }
+
+  // Delete book
+  function deleteBook(id) {
+    books = books.filter(book => book.id !== id);
+    renderBooks(books);
+  }
+
+  // Search
+  function searchBooks() {
+    const keyword = document.getElementById("searchInput").value.toLowerCase();
+    const filtered = books.filter(book =>
+      book.title.toLowerCase().includes(keyword)
+    );
+    renderBooks(filtered);
+  }
+
+  // Infinite scroll
+  window.addEventListener("scroll", () => {
+    if (
+      window.innerHeight + window.scrollY >= document.body.offsetHeight - 100
+    ) {
+      fetchBooks();
+    }
+  });
+
+  // Initial load
+  fetchBooks();
+</script>
+
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+</body>
+</html>

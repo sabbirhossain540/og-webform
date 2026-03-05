@@ -26,6 +26,7 @@
       "config/test/js/jquery.min.js",
       "config/lib/js/jqueryUI.js",
       "config/test/js/bootstrap.min.js",
+      "config/test/js/sweetalert.min.js",
       "config/test/js/jqueryDatatable.min.js",
       "config/test/js/jqueybootstarpDatatable.min.js",
       "config/test/js/config.js"

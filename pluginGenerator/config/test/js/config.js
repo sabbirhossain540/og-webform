@@ -304,7 +304,6 @@
 
       } catch (error) {
         console.error("Fetch error :", error.message);
-        alert("Failed to load data: " + error.message);
         return null;
       }
     }
@@ -579,8 +578,6 @@
     /* --------------------------------
         Save Form
       -------------------------------- */
-
-
       async function awsDataStoreManagement(data, editItemId) {
         const body = {
           title: data.title,
@@ -616,12 +613,16 @@
           }
 
           console.log("Success:", result);
+          if(result){
+            location.reload();
+          }
 
         } catch (error) {
           console.error("Fetch failed:", error);
-          alert("❌ Network / CORS error occurred");
+          alert("Network / CORS error occurred");
         }
       }
+
 
 
       async function handleDeleteItem(id) {
@@ -650,7 +651,7 @@
 
 
 
-      $('#saveFormBtn').click(function () {
+      $('#saveFormBtn').click(async function () {
          // Remove old errorsss
           $('.validation-error').remove();
           $('.is-invalid').removeClass('is-invalid');
@@ -762,6 +763,7 @@
         // console.log(data);
 
         awsDataStoreManagement(data, editItemId, mainFieldProperties);
+        
 
         $('#formBuilderModal').modal('hide');
       });
@@ -826,15 +828,52 @@
     /* --------------------------------
        Delete Row
     -------------------------------- */
+    // $('#formTable').on('click', '.deleteBtn', function () {
+    //   confirm()
+    //   const row = table.row($(this).parents('tr'));
+    //   const rowData = row.data();
+    //   const mainDataFields = JSON.parse(rowData[2]);
+    //   let response = handleDeleteItem(mainDataFields.id);
+    //   if(response){
+    //     row.remove().draw();
+    //   }
+    // });
+
     $('#formTable').on('click', '.deleteBtn', function () {
-      const row = table.row($(this).parents('tr'));
-      const rowData = row.data();
-      const mainDataFields = JSON.parse(rowData[2]);
-      let response = handleDeleteItem(mainDataFields.id);
-      if(response){
-        row.remove().draw();
+
+    const row = table.row($(this).parents('tr'));
+    const rowData = row.data();
+    const mainDataFields = JSON.parse(rowData[2]);
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This record will be deleted parmanetly!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      confirmButtonColor: "#d33",
+    }).then(async (result) => {
+
+      if (result.isConfirmed) {
+        let response = await handleDeleteItem(mainDataFields.id);
+        
+        if (response) {
+          row.remove().draw();
+
+          Swal.fire({
+            title: "Deleted!",
+            text: "Record has been deleted successfully.",
+            icon: "success",
+            showConfirmButton: true
+          });
+        }
       }
+
     });
+
+    
+
+  });
 
     /* --------------------------------
        Save Plugin Config
