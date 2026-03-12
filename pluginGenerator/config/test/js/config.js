@@ -341,7 +341,7 @@
 
             <div class="preview-row">
               <strong>URL:</strong> 
-              <a href="${mainData.url}" target="_blank">
+              <a href="${mainData.appUrl}" target="_blank">
                 ${mainData.appUrl || 'none'}
               </a>
             </div>

@@ -15,17 +15,9 @@ const crosObj = {
     };
 
 async function websiteDirectoryManagement(data){
-
-  const bucketName = "ogusu-webform"; // তোমার bucket নাম
-  const sourceKey = "index.html"; // existing HTML file
+  const bucketName = "ogusu-webform";
+  const sourceKey = "index.html";
   const directoryName = data.directory + "-" + data.kintoneAppId;
-
-  console.log("Creating directory:", directoryName);
-
-  // folder name validation (VERY IMPORTANT)
-  // if (!/^[a-z0-9-]+$/.test(directoryName)) {
-  //   throw new Error("Invalid directory name");
-  // }
 
   const destinationKey = `${directoryName}/index.html`;
 
@@ -36,8 +28,6 @@ async function websiteDirectoryManagement(data){
       CopySource: `${bucketName}/${sourceKey}`,
       Key: destinationKey
     }));
-
-    console.log("File copied successfully");
 
     return `https://ogusu-webform.s3.ap-northeast-3.amazonaws.com/${directoryName}/index.html`;
 
@@ -54,9 +44,6 @@ module.exports.saveOrUpdate = async (event) => {
     const body = typeof event.body === "string"
       ? JSON.parse(event.body)
       : event.body;
-
-
-    
 
     const corsHeaders = crosObj;
     console.log(body);
@@ -88,7 +75,6 @@ module.exports.saveOrUpdate = async (event) => {
       },
       ReturnValues: "ALL_NEW"
     };
-
 
       const result = await ddb.send(new UpdateCommand(params));
 

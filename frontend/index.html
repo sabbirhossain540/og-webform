@@ -1,138 +1,473 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>S3 Website - Book List</title>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OGUSU Webform</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-</head>
-<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<h2 class="text-center mt-4">📚 Book List (Like + Infinite Scroll)</h2>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/js/bootstrap-select.min.js"></script>
 
-<div class="container mt-3">
-  <!-- Search -->
-  <input
-    type="text"
-    id="searchInput"
-    class="form-control mb-3"
-    placeholder="Search by book title..."
-    onkeyup="searchBooks()"
-  />
+    <style>
+      body {
+        background: #f7f8fb;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+      }
 
-  <!-- Book Table -->
-  <table class="table table-bordered">
-    <thead class="thead-dark">
-      <tr>
-        <th>Title</th>
-        <th>Author</th>
-        <th>Like ❤️</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="bookTable"></tbody>
-  </table>
+      /* HEADER */
+      .header {
+        background: #d5edff;
+        border-bottom: 1px solid #eaeaea;
+        padding: 5px 75px;
+        display: flex;
+      }
 
-  <p class="text-center" id="loading" style="display:none;">Loading more books...</p>
-</div>
+      .logo {
+        height: 55px;
+      }
 
-<script>
-  let books = [];
-  let page = 1;
-  let isLoading = false;
+      /* PAGE */
+      .page-wrapper {
+        padding: 50px 70px;
+      }
 
-  // Fetch books (pagination)
-  async function fetchBooks() {
-    if (isLoading) return;
-    isLoading = true;
+      /* TITLE */
+      #appTitle {
+        font-size: 34px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
 
-    document.getElementById("loading").style.display = "block";
+      /* FORM */
+      .form-section {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        border: 1px solid #eee;
+      }
 
-    const res = await fetch(`https://openlibrary.org/search.json?q=javascript&page=${page}`);
-    const data = await res.json();
+      .form-group label {
+        font-weight: 500;
+      }
 
-    const newBooks = data.docs.slice(0, 20).map((book, index) => ({
-      id: Date.now() + index,
-      title: book.title,
-      author: book.author_name ? book.author_name[0] : "Unknown",
-      likes: 0
-    }));
+      .form-control {
+        height: 48px;
+        border-radius: 8px;
+        border: 1px solid #e4e6eb;
+      }
 
-    books = books.concat(newBooks);
-    renderBooks(books);
+      textarea.form-control {
+        height: 130px;
+      }
 
-    page++;
-    isLoading = false;
-    document.getElementById("loading").style.display = "none";
-  }
+      .clear-btn {
+        margin-top: 20px;
+        height: 48px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        font-weight: 500;
+        min-width: 100px;
+      }
 
-  // Render table
-  function renderBooks(bookArray) {
-    const table = document.getElementById("bookTable");
-    table.innerHTML = "";
+      .clear-btn:hover {
+        background: #1d4ed8;
+      }
 
-    bookArray.forEach(book => {
-      const row = document.createElement("tr");
+      .submit-btn {
+        margin-top: 20px;
+        height: 48px;
+        border: none;
+        border-radius: 8px;
+        background: #e72455;
+        font-weight: 500;
+        min-width: 100px;
+      }
 
-      row.innerHTML = `
-        <td>${book.title}</td>
-        <td>${book.author}</td>
+      .submit-btn:hover {
+        background: #eb0505;
+      }
+
+      /* FOOTER */
+
+      .footer{
+        margin-top:60px;
+        background:#ffffff;
+        border-top:1px solid #eaeaea;
+        padding:5px;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:10px;
+        font-size:14px;
+        color:#6b7280;
+      }
+
+      .footer-logo{
+        height:13px;
+      }
+
+      /* MOBILE */
+      @media(max-width:768px) {
+        .page-wrapper {
+          padding: 30px 20px;
+        }
+
+        #appTitle {
+          font-size: 26px;
+        }
+
+        .header {
+          background: #d5edff;
+          border-bottom: 1px solid #eaeaea;
+          padding: 5px 75px;
+          display: flex;
+          justify-content:center;
+          align-items:center;
+
+        }
+
+        .form-section {
+          padding: 25px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <div class="header d-flex align-items-center">
+      <img src="https://ogusuresouces.s3.us-east-1.amazonaws.com/public/ogWebform.png" class="logo">
+    </div>
+    <!-- PAGE -->
+    <div class="page-wrapper">
+      <h2 id="appTitle"></h2>
+      <div class="form-section" id="formArea"></div>
+    </div>
+    <!-- FOOTER -->
+
+    <div class="footer">
+      <span>© <span id="year"></span> All rights reserved by</span>
+      <a href="https://ogusu.co.jp" target="_blank">
+        <img src="https://ogusuresouces.s3.us-east-1.amazonaws.com/public/ogusu_logo.jpg" class="footer-logo">
+      </a>
+    </div>
+    <script>
+      // const url = window.location.href;
+      // const folderName = url.split('/')[3];
+      // const parts = folderName.split('-');
+      // const directory = parts[0];
+      // const appId = parts[1];
+      let mainData;
+      const appId = 953;
+      const directory = 'xOBfhdBFS0';
+
+
+      async function getAppData(appId) {
+        const apiUrl = `https://1frg78a4ae.execute-api.ap-northeast-3.amazonaws.com/dev/app/${appId}`;
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        return data;
+      }
+
+      async function subtableGenerator(data){
+        //console.log(data);
+      }
+
+
+      async function richTextFieldGenerator(fieldData, requiredMark, requiredAttr){
+        return `<div class="form-group">
+            <label>${fieldData.label} ${requiredMark}</label>
+            <textarea class="form-control" ${requiredAttr}></textarea>
+          </div>`;
+      }
+
+      async function fetchLookupData(config){
+
+        const query = `${config.filterCond} order by ${config.sort}`;
+
+        const url = `https://ogusu.cybozu.com/k/v1/records.json?app=${config.relatedApp.app}&query=${encodeURIComponent(query)}`;
+
+        const response = await fetch(url,{
+          method: "GET",
+          headers:{
+            "X-Cybozu-Authorization": "MDIzNDg1Ojc4NnNhYmJpcg==",
+            "Content-Type": "application/json"
+          }
+        });
+
+        const result = await response.json();
+        console.log(result);
+
+        //return result.records;
+      }
+
+      async function singleLineTextGenerator(fieldData, requiredMark, requiredAttr){
+        if(fieldData.lookup){
+          await fetchLookupData(fieldData.lookup);
+         return `
+         <div class="form-group">
+          <label>${fieldData.label} ${requiredMark}</label>
+          <select class="selectpicker form-control" data-live-search="true">
+            <option>Japan</option>
+            <option>Bangladesh</option>
+            <option>India</option>
+            <option>USA</option>
+            <option>Canada</option>
+            <option>Germany</option>
+            <option>France</option>
+            <option>Italy</option>
+            <option>Spain</option>
+            <option>Brazil</option>
+            <option>China</option>
+            <option>Korea</option>
+          </select>
+        </div>`
+          //dropDownFieldGenerator(fieldData.lookup);
+        }
+        
+
+        return `<div class="form-group">
+          <label>${fieldData.label} ${requiredMark}</label>
+          <input type="text" class="form-control" ${requiredAttr}>
+        </div>`;
+      }
+
+      async function fileTypeFieldGenerator(fieldData, requiredMark, requiredAttr){
+        return `<div class="form-group">
+            <label class="font-weight-500">${fieldData.label} ${requiredMark}</label>
+            <div class="custom-file">
+              <input type="file" class="custom-file-input" id="${fieldData.code}" ${requiredAttr}>
+              <label class="custom-file-label" for="${fieldData.code}">Choose file</label>
+            </div>
+          </div>`;
+      }
+
+      async function dropdownFieldGenerator(fieldData, requiredMark, requiredAttr){
+        const options = Object.values(fieldData.options || {})
+          .sort((a,b) => Number(a.index) - Number(b.index));
+        return `<div class="form-group">
+          <label>${fieldData.label} ${requiredMark}</label>
+          <select class="form-control" ${requiredAttr}>
+            <option value="">Please select</option>
+            ${options.map(elem => `
+              <option value="${elem.label}">${elem.label}</option>
+            `).join("")}
+          </select>
+        </div>`;
+      }
+
+
+      async function radioButtonFieldGenerator(fieldData, requiredMark, requiredAttr) {
+
+        const options = Object.values(fieldData.options || {})
+          .sort((a,b) => Number(a.index) - Number(b.index));
+
+        return `<div class="form-group">
+          <label class="font-weight-500">${fieldData.label} ${requiredMark}</label>
+          <div>
+
+            ${options.map(elem => `
+              <div class="form-check ${fieldData.align === "HORIZONTAL" ? "form-check-inline" : ""}">
+                <input 
+                  class="form-check-input" 
+                  type="radio" 
+                  name="${fieldData.code}" 
+                  id="${fieldData.code}_${elem.index}"
+                  value="${elem.label}"
+                  ${fieldData.defaultValue === elem.label ? "checked" : ""}
+                  ${requiredAttr}
+                >
+                <label class="form-check-label" for="${fieldData.code}_${elem.index}">
+                  ${elem.label}
+                </label>
+              </div>
+            `).join("")}
+
+          </div>
+        </div>`;
+      }
+
+
+      // Table Generator function start
+
+      let tableFields = [];
+
+     async function tableGenerator(fieldData){
+
+        tableFields = Object.values(fieldData); // store once
+
+        let header = tableFields.map(f => `<th>${f.label}</th>`).join("");
+        header += `<th style="min-width: 100px !important;">Action</th>`;
+
+        return `
+        <table class="table table-bordered" id="dynamicTable">
+          <thead>
+            <tr>${header}</tr>
+          </thead>
+
+          <tbody id="tableBody">
+            ${await tableRowGenerator()}
+          </tbody>
+        </table>`;
+      }
+
+
+      async function tableRowGenerator(){
+
+        let row = "<tr>";
+
+        for(const field of tableFields){
+          //console.log(field);
+
+          let fieldHTML = "";
+
+          if(field.type === "SINGLE_LINE_TEXT"){
+            fieldHTML = `<input type="text" class="form-control">`;
+          }
+
+          if(field.type === "DROP_DOWN"){
+            const options = Object.values(field.options || {})
+            .sort((a,b)=>Number(a.index)-Number(b.index));
+
+            fieldHTML = `
+              <select class="form-control">
+                ${options.map(o=>`<option>${o.label}</option>`).join("")}
+              </select>
+            `;
+          }
+
+          if(field.type === "USER_SELECT"){
+            fieldHTML = `<input type="text" class="form-control">`;
+          }
+
+          row += `<td>${fieldHTML}</td>`;
+        }
+
+        row += `
         <td>
-          <button class="btn btn-sm btn-outline-warning" onclick="likeBook(${book.id})">
-            ❤️ ${book.likes}
-          </button>
-        </td>
-        <td>
-          <button class="btn btn-sm btn-danger" onclick="deleteBook(${book.id})">
-            Delete
-          </button>
-        </td>
-      `;
+          <button type="button" class="btn btn-sm btn-success addRow">+</button>
+          <button type="button" class="btn btn-sm btn-danger removeRow">-</button>
+        </td>`;
 
-      table.appendChild(row);
-    });
-  }
+        row += "</tr>";
 
-  // Like button
-  function likeBook(id) {
-    const book = books.find(b => b.id === id);
-    if (book) {
-      book.likes++;
-      renderBooks(books);
-    }
-  }
+        return row;
+      }
 
-  // Delete book
-  function deleteBook(id) {
-    books = books.filter(book => book.id !== id);
-    renderBooks(books);
-  }
+      //End
 
-  // Search
-  function searchBooks() {
-    const keyword = document.getElementById("searchInput").value.toLowerCase();
-    const filtered = books.filter(book =>
-      book.title.toLowerCase().includes(keyword)
-    );
-    renderBooks(filtered);
-  }
+      async function formFieldGenerator(fieldData){
+        console.log(fieldData.type);
+        const requiredMark = fieldData.required 
+          ? '<span style="color:red">*</span>' 
+          : '';
 
-  // Infinite scroll
-  window.addEventListener("scroll", () => {
-    if (
-      window.innerHeight + window.scrollY >= document.body.offsetHeight - 100
-    ) {
-      fetchBooks();
-    }
-  });
+        const requiredAttr = fieldData.required ? "required" : "";
 
-  // Initial load
-  fetchBooks();
-</script>
+        if(fieldData.type === "RICH_TEXT"){
+          await richTextFieldGenerator(fieldData, requiredMark, requiredAttr);
+        }
 
-<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+        if(fieldData.type === "SUBTABLE"){
+          const tableData =  await tableGenerator(fieldData.fields);
+          return `<div class="form-group">
+            <label>${fieldData.label} ${requiredMark}</label>
+            ${tableData}
+          </div>`;
+        }
 
-</body>
+        if(fieldData.type == "SINGLE_LINE_TEXT"){
+          const generatedSingleLineTextField = await singleLineTextGenerator(fieldData, requiredMark, requiredAttr);
+          return generatedSingleLineTextField;
+        }
+
+        if(fieldData.type == "FILE"){
+          const generatedFileField = await fileTypeFieldGenerator(fieldData, requiredMark, requiredAttr);
+          return generatedFileField;
+        }
+
+        if(fieldData.type == "DROP_DOWN"){
+          const generatedDropdownField = await dropdownFieldGenerator(fieldData, requiredMark, requiredAttr);
+          return generatedDropdownField;
+        }
+
+        if(fieldData.type == "RADIO_BUTTON"){
+          const generatedDropdownField = await radioButtonFieldGenerator(fieldData, requiredMark, requiredAttr);
+          return generatedDropdownField;
+        }
+
+        return `<div class="form-group">
+          <label>${fieldData.label} ${requiredMark}</label>
+        </div>`;
+      }
+      
+      async function formGenerator(data){
+        let formContruct = "";
+
+        for(const elem of data){
+          formContruct += await formFieldGenerator(elem);
+        }
+
+        return `<form>
+          ${formContruct}
+          <div class="text-right">
+            <button class="btn clear-btn text-white mr-1">Clear</button>
+            <button class="btn submit-btn text-white">Submit</button>
+          </div>
+          
+        </form>`;
+      }
+
+      async function loadMainData() {
+          const data = await getAppData(appId);
+          mainData = data.find(item => item.directory === directory);
+        }
+        (async () => {
+          await loadMainData();
+          document.getElementById("year").innerText = new Date().getFullYear();
+          document.getElementById("appTitle").innerText = mainData.title;
+          document.getElementById("formArea").innerHTML = await formGenerator(mainData.mainFieldProperties);
+          console.log(mainData);
+          $('.selectpicker').selectpicker({
+            width: '100%',
+            size: 7
+          });
+
+
+          document.addEventListener("change", function(e){
+            if(e.target.classList.contains("custom-file-input")){
+              const fileName = e.target.files[0]?.name || "Choose file";
+              e.target.nextElementSibling.innerText = fileName;
+            }
+          });
+
+          //Dynamic Table Script 
+          document.addEventListener("click", async function(e){
+            if(e.target.classList.contains("addRow")){
+              const tableBody = document.getElementById("tableBody");
+              const newRow = await tableRowGenerator();
+              tableBody.insertAdjacentHTML("beforeend", newRow);
+            }
+
+            if(e.target.classList.contains("removeRow")){
+              const row = e.target.closest("tr");
+              const rows = document.querySelectorAll("#tableBody tr");
+
+              if(rows.length > 1){
+                row.remove();
+              }
+            }
+          });
+          
+
+        })();
+    </script>
+  </body>
 </html>
