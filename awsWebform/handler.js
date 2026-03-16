@@ -3,6 +3,7 @@ const { PutCommand, UpdateCommand, DeleteCommand, GetCommand, DynamoDBDocumentCl
 const { randomUUID } = require("crypto");
 const { QueryCommand } = require("@aws-sdk/lib-dynamodb");
 const { S3Client, CopyObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } = require("@aws-sdk/client-s3");
+const https = require("https");
 
 const client = new DynamoDBClient({ region: "ap-northeast-3" });
 const ddb = DynamoDBDocumentClient.from(client);
@@ -311,7 +312,101 @@ module.exports.deleteData = async (event) => {
       body: JSON.stringify({ error: err.message })
     };
   }
+}
+
+
+
+
+module.exports.getLookupData = async (event) => {
+
+  try {
+
+    const body = JSON.parse(event.body);
+    console.log(body);
+
+    const limit = 500;
+    let offset = 0;
+    let records = [];
+    let totalCount = 0;
+
+    // Required fields
+    const fields = [
+      ...body.lookupPickerFields,
+      ...body.fieldMappings.map(f => f.relatedField)
+    ];
+
+    const baseQuery = `${body.filterCond} order by ${body.sort}`;
+
+    while (true) {
+
+      const query = `${baseQuery} limit ${limit} offset ${offset}`;
+
+      const path =
+        `/k/v1/records.json?app=${body.relatedApp.app}` +
+        `&query=${encodeURIComponent(query)}` +
+        `&fields=${fields.map(f => encodeURIComponent(f)).join(",")}` +
+        `&totalCount=true`;
+
+      const options = {
+        hostname: process.env.COMPANY_NAME,
+        path: path,
+        method: "GET",
+        headers: {
+          "X-Cybozu-Authorization": process.env.OGUSU_AUTH
+        }
+      };
+
+      const result = await new Promise((resolve, reject) => {
+
+        const req = https.request(options, res => {
+
+          let data = "";
+
+          res.on("data", chunk => data += chunk);
+
+          res.on("end", () => resolve(JSON.parse(data)));
+
+        });
+
+        req.on("error", reject);
+        req.end();
+
+      });
+
+      if (!totalCount) totalCount = result.totalCount;
+
+      records.push(...result.records);
+
+      if (result.records.length < limit) break;
+
+      offset += limit;
+
+    }
+
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*"
+      },
+      body: JSON.stringify({
+        totalCount: totalCount,
+        records: records
+      })
+    };
+
+  } catch (err) {
+
+    console.log(err);
+
+    return {
+      statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*"
+      },
+      body: JSON.stringify({ error: err.message })
+    };
+
+  }
+
 };
-
-
 

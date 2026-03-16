@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-dropdown-toggle {
+            width: 100%;
+            padding: 6px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background: white;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .custom-dropdown-menu {
+            display: none;
+            position: absolute;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background: white;
+            z-index: 9999;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .custom-dropdown-menu.show {
+            display: block;
+        }
+
+        .custom-dropdown-search {
+            width: 100%;
+            padding: 6px 12px;
+            border: none;
+            border-bottom: 1px solid #ced4da;
+            outline: none;
+        }
+
+        .custom-dropdown-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .custom-dropdown-table thead th {
+            padding: 6px 12px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            font-size: 12px;
+            position: sticky;
+            top: 36px;
+        }
+
+        .custom-dropdown-table tbody tr {
+            cursor: pointer;
+        }
+
+        .custom-dropdown-table tbody tr:hover {
+            background: #e8f0fe;
+        }
+
+        .custom-dropdown-table tbody td {
+            padding: 6px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        /* hidden real select */
+        .real-select {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="form-group">
+        <label>グループ名</label>
+        <div class="custom-dropdown" id="myDropdown">
+
+            <!-- Selected value দেখানোর জন্য button -->
+            <button class="custom-dropdown-toggle" type="button">
+                Select Item
+            </button>
+
+            <!-- Dropdown menu -->
+            <div class="custom-dropdown-menu">
+                <!-- Search box -->
+                <input type="text" class="custom-dropdown-search" placeholder="Search...">
+
+                <!-- Table -->
+                <table class="custom-dropdown-table">
+                    <thead>
+                        <tr>
+                            <th>文字列__1行__0</th>
+                            <th>部署</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JavaScript দিয়ে row add হবে -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Real hidden select (form submit এর জন্য) -->
+            <select class="real-select" name="groupName">
+                <option value="">Select Item</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script>
+    // Data (তোমার dropDownFieldGenerator থেকে আসবে)
+    const data = [
+        { "文字列__1行__0": { value: "田中太郎" }, "部署": { value: "営業部" } },
+        { "文字列__1行__0": { value: "山田花子" }, "部署": { value: "総務部" } },
+        { "文字列__1行__0": { value: "佐藤一郎" }, "部署": { value: "開発部" } },
+    ];
+
+    const relatedKeyField = "文字列__1行__0";
+    const pickerFields = ["文字列__1行__0", "部署"];
+
+    function initCustomDropdown(dropdownId, data, relatedKeyField, pickerFields) {
+        const dropdown = document.getElementById(dropdownId);
+        const toggle = dropdown.querySelector(".custom-dropdown-toggle");
+        const menu = dropdown.querySelector(".custom-dropdown-menu");
+        const search = dropdown.querySelector(".custom-dropdown-search");
+        const tbody = dropdown.querySelector("tbody");
+        const realSelect = dropdown.querySelector(".real-select");
+
+        // Row গুলো render করো
+        function renderRows(filteredData) {
+            tbody.innerHTML = "";
+            filteredData.forEach(elem => {
+                const value = elem[relatedKeyField]?.value || "";
+                const tr = document.createElement("tr");
+                tr.setAttribute("data-value", value);
+
+                pickerFields.forEach(field => {
+                    const fieldValue = elem[field]?.value;
+                    const cellValue = Array.isArray(fieldValue)
+                        ? fieldValue.map(v => v.name || v.code || v).join(", ")
+                        : fieldValue || "";
+                    const td = document.createElement("td");
+                    td.textContent = cellValue;
+                    tr.appendChild(td);
+                });
+
+                // Row click করলে select হবে
+                tr.addEventListener("click", () => {
+                    toggle.textContent = value;
+                    realSelect.value = value;
+                    menu.classList.remove("show");
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // প্রথমে সব data দেখাও
+        renderRows(data);
+
+        // Toggle button click
+        toggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            menu.classList.toggle("show");
+            search.focus();
+        });
+
+        // Search filter
+        search.addEventListener("input", () => {
+            const keyword = search.value.toLowerCase();
+            const filtered = data.filter(elem => {
+                return pickerFields.some(field => {
+                    const val = elem[field]?.value || "";
+                    return val.toLowerCase().includes(keyword);
+                });
+            });
+            renderRows(filtered);
+        });
+
+        // Outside click এ close করো
+        document.addEventListener("click", () => {
+            menu.classList.remove("show");
+        });
+    }
+
+    initCustomDropdown("myDropdown", data, relatedKeyField, pickerFields);
+</script>
+</body>
+</html>

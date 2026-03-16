@@ -7,6 +7,9 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: ap-northeast-3
+  environment:
+    OGUSU_AUTH: MDIzNDg1Ojc4NnNhYmJpcg==
+    COMPANY_NAME: ogusu.cybozu.com 
   iam:
     role:
       statements:
@@ -54,7 +57,7 @@ functions:
           method: get
           cors: true
 
-  lookup:
+  getLookupData:
     handler: handler.getLookupData
     events:
       - http:
