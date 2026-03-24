@@ -65,3 +65,11 @@ functions:
           method: post
           cors: true
 
+  saveRecordIntoKintone:
+      handler: handler.saveRecordIntoKintone
+      events:
+        - http:
+            path: saveRecordIntoKintone
+            method: post
+            cors: true
+

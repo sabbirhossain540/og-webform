@@ -410,3 +410,45 @@ module.exports.getLookupData = async (event) => {
 
 };
 
+
+
+module.exports.saveRecordIntoKintone = async (event) => {
+  const body = JSON.parse(event.body);
+
+  const kintoneBody = JSON.stringify({
+    app: body.kintoneAppId,
+    record: body.record
+  });
+
+  const options = {
+    hostname: process.env.COMPANY_NAME,
+    path: "/k/v1/record.json",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Cybozu-Authorization": process.env.OGUSU_AUTH,
+      "Content-Length": Buffer.byteLength(kintoneBody)
+    }
+  };
+
+  const result = await new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => { data += chunk; });
+      res.on("end", () => resolve({ status: res.statusCode, body: data }));
+    });
+    req.on("error", reject);
+    req.write(kintoneBody);
+    req.end();
+  });
+
+  return {
+    statusCode: result.status,
+    headers: {
+      "Access-Control-Allow-Origin": "*",        // CORS fix
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "POST, OPTIONS"
+    },
+    body: result.body
+  };
+};

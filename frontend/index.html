@@ -166,12 +166,41 @@
       // const appId = parts[1];
       let mainData;
       // const appId = 992;
-      // const directory = 'SpaIv25ucS';
+      // const directory = 'nFjwcyxcHt';
       // const appId = 1118;
       // const directory = 'Ll2CWg7Gwh';
 
-       const appId = 953;
-      const directory = 'xOBfhdBFS0';
+      // const appId = 904;
+      // const directory = 'ehthVhECWU';
+
+      const appId = 953;
+      const directory = 'lMTT2sTFfR';
+
+
+      const userSelectConfigure = {
+        "relatedApp": {
+          "app": "50",
+          "code": ""
+        },
+        "lookupPickerFields": [
+          "氏名"
+        ],
+        "relatedKeyField": "氏名",
+        "fieldMappings": [
+          {
+            "field": "社員番号",
+            "relatedField": "社員番号"
+          },
+          {
+            "field": "所属",
+            "relatedField": "所属"
+          }
+        ],
+        "sort": "氏名 asc",
+        "filterCond": "就労状況 = \"在職\" and 会社区分 in (\"金属籍\", \"熱処理籍\")"
+      }
+
+      let allUserData = [];
 
 
       async function getAppData(appId) {
@@ -181,17 +210,15 @@
         return data;
       }
 
-      async function subtableGenerator(data){
-        //console.log(data);
-      }
-
 
       async function richTextFieldGenerator(fieldData, requiredMark, requiredAttr){
         return `<div class="form-group">
             <label>${fieldData.label} ${requiredMark}</label>
-            <textarea class="form-control" ${requiredAttr}></textarea>
+            <textarea class="form-control" id=${fieldData.code} ${requiredAttr}></textarea>
           </div>`;
       }
+
+      
 
       async function dropDownFieldGenerator(data) {
 
@@ -209,41 +236,78 @@
         const result = await res.json();
 
         return result.records;
-
       }
 
 
-      let dataMap = {}; // Global, field code onujayi store
+      let dataMap = {}; 
+      let lookupRelatedfield = [];
 
-      async function singleLineTextGenerator(fieldData, requiredMark, requiredAttr) {
-        const result = await dropDownFieldGenerator(fieldData.lookup);
-        
-        if (result) {
-          dataMap[fieldData.code] = result;
+      async function singleLineTextGenerator(fieldData, requiredMark = null, requiredAttr = null, subtable = false) {
+        const labelTag = subtable ? "": `<label>${fieldData.label} ${requiredMark}</label>`;
+        //console.log(fieldData);
 
-          let options = `<option value="">Select Item</option>`;
-          result.forEach(elem => {
-            const value = elem[fieldData.lookup.relatedKeyField]?.value || "";
-            options += `<option value="${value}">${value}</option>`;
+        // console.log("Before---------");
+        //For default User Retrive Process
+        if(fieldData.type == "USER_SELECT"){
+          const results = allUserData;
+          if (results) {
+            dataMap[fieldData.code] = results;
+            let options = `<option value="">Select ${fieldData.label}</option>`;
+            results.forEach(elem => {
+               const value = elem['氏名']?.value || "";
+               options += `<option value="${value}">${value}</option>`;
+            }); 
+
+            return `
+              <div class="form-group">
+                ${labelTag}
+                <select 
+                  class="selectpicker form-control" 
+                  data-live-search="true" 
+                  data-field-code="${fieldData.code}"
+                  id="${fieldData.code}"
+                  onchange="fieldValueSetFunction(this.value, this)">
+                  ${options}
+                </select>
+              </div>
+            `;
+          }
+        }
+
+        if(fieldData.lookup){
+          fieldData.lookup.fieldMappings.forEach(el=>{
+            lookupRelatedfield.push(el.field);
           });
+          const result = await dropDownFieldGenerator(fieldData.lookup);
 
-          return `
-            <div class="form-group">
-              <label>${fieldData.label} ${requiredMark}</label>
-              <select 
-                class="selectpicker form-control" 
-                data-live-search="true" 
-                data-field-code="${fieldData.code}"
-                onchange="fieldValueSetFunction(this.value, this)">
-                ${options}
-              </select>
-            </div>
-          `;
+          if (result) {
+            dataMap[fieldData.code] = result;
+
+            let options = `<option value="">Select ${fieldData.label}</option>`;
+            result.forEach(elem => {
+              const value = elem[fieldData.lookup.relatedKeyField]?.value || "";
+              options += `<option value="${value}">${value}</option>`;
+            }); 
+
+            return `
+              <div class="form-group">
+                ${labelTag}
+                <select 
+                  class="selectpicker form-control" 
+                  data-live-search="true" 
+                  data-field-code="${fieldData.code}"
+                  id="${fieldData.code}"
+                  onchange="fieldValueSetFunction(this.value, this)">
+                  ${options}
+                </select>
+              </div>
+            `;
+          }
         }
 
         return `
           <div class="form-group">
-            <label>${fieldData.label} ${requiredMark}</label>
+            ${labelTag}
             <div class="custom-file">
               <input type="text" class="form-control" id="${fieldData.code}" ${requiredAttr}>
             </div>
@@ -277,22 +341,27 @@
       }
 
       
-      async function fileTypeFieldGenerator(fieldData, requiredMark, requiredAttr){
+      async function fileTypeFieldGenerator(fieldData, requiredMark = null, requiredAttr = null, subtable = false){
+        const labelTag = subtable ? "": `<label>${fieldData.label} ${requiredMark}</label>`;
         return `<div class="form-group">
-            <label class="font-weight-500">${fieldData.label} ${requiredMark}</label>
-            <div class="custom-file">
+            ${labelTag}
+            <br/>
+            <div class="custom-file" style="width:35%; !important">
               <input type="file" class="custom-file-input" id="${fieldData.code}" ${requiredAttr}>
               <label class="custom-file-label" for="${fieldData.code}">Choose file</label>
             </div>
           </div>`;
       }
 
-      async function dropdownFieldGenerator(fieldData, requiredMark, requiredAttr){
+      async function dropdownFieldGenerator(fieldData, requiredMark = null, requiredAttr = null, subtable = false){
         const options = Object.values(fieldData.options || {})
           .sort((a,b) => Number(a.index) - Number(b.index));
+        
+        const labelTag = subtable ? "": `<label>${fieldData.label} ${requiredMark}</label>`;;
+          
         return `<div class="form-group">
-          <label>${fieldData.label} ${requiredMark}</label>
-          <select class="form-control" ${requiredAttr}>
+          ${labelTag}
+          <select class="form-control" id=${fieldData.code} ${requiredAttr}>
             <option value="">Please select</option>
             ${options.map(elem => `
               <option value="${elem.label}">${elem.label}</option>
@@ -302,13 +371,15 @@
       }
 
 
-      async function radioButtonFieldGenerator(fieldData, requiredMark, requiredAttr) {
+      async function radioButtonFieldGenerator(fieldData, requiredMark = null, requiredAttr = null, subtable = false) {
 
         const options = Object.values(fieldData.options || {})
           .sort((a,b) => Number(a.index) - Number(b.index));
 
+        const labelTag = subtable ? "": `<label>${fieldData.label} ${requiredMark}</label>`;
+
         return `<div class="form-group">
-          <label class="font-weight-500">${fieldData.label} ${requiredMark}</label>
+          ${labelTag}
           <div>
 
             ${options.map(elem => `
@@ -332,15 +403,16 @@
         </div>`;
       }
 
-      async function checkboxFieldGenerator(fieldData, requiredMark, requiredAttr){
+      async function checkboxFieldGenerator(fieldData, requiredMark = null, requiredAttr = null, subtable = false){
 
         const options = Object.values(fieldData.options || {})
           .sort((a,b) => Number(a.index) - Number(b.index));
 
         const defaultValues = fieldData.defaultValue || [];
+        const labelTag = subtable ? "": `<label>${fieldData.label} ${requiredMark}</label>`;
 
         return `<div class="form-group">
-          <label class="font-weight-500">${fieldData.label} ${requiredMark}</label>
+          ${labelTag}
           <div>
 
             ${options.map(elem => `
@@ -365,15 +437,18 @@
       }
 
 
-      async function dateTimeFieldGenerator(fieldData, requiredMark, requiredAttr) {
+      async function dateTimeFieldGenerator(fieldData, requiredMark = null, requiredAttr = null, subtable = false) {
 
         const defaultValue = fieldData.defaultValue || "";
+        const labelTag = subtable ? "": `<label>${fieldData.label} ${requiredMark}</label>`;
+
+        let fieldType = fieldData.type == "TIME" ? "time" : "date";
 
         return `
           <div class="form-group">
-            <label class="font-weight-500">${fieldData.label} ${requiredMark}</label>
+            ${labelTag}
             <input
-              type="datetime-local"
+              type=${fieldType}
               class="form-control"
               name="${fieldData.code}"
               id="${fieldData.code}"
@@ -391,7 +466,7 @@
 
      async function tableGenerator(fieldData){
 
-        tableFields = Object.values(fieldData); // store once
+        tableFields = Object.values(fieldData);
 
         let header = tableFields.map(f => `<th>${f.label}</th>`).join("");
         header += `<th style="min-width: 100px !important;">Action</th>`;
@@ -410,33 +485,19 @@
 
 
       async function tableRowGenerator(){
+        const requiredMark = '';
+
+        const requiredAttr = "";
 
         let row = "<tr>";
 
         for(const field of tableFields){
           //console.log(field);
+          console.log(field);
 
           let fieldHTML = "";
 
-          if(field.type === "SINGLE_LINE_TEXT"){
-            fieldHTML = `<input type="text" class="form-control">`;
-          }
-
-          if(field.type === "DROP_DOWN"){
-            const options = Object.values(field.options || {})
-            .sort((a,b)=>Number(a.index)-Number(b.index));
-
-            fieldHTML = `
-              <select class="form-control">
-                ${options.map(o=>`<option>${o.label}</option>`).join("")}
-              </select>
-            `;
-          }
-
-          if(field.type === "USER_SELECT"){
-            fieldHTML = `<input type="text" class="form-control">`;
-          }
-
+          fieldHTML = await formFieldGenerator(field, subtable=true);
           row += `<td>${fieldHTML}</td>`;
         }
 
@@ -453,10 +514,10 @@
 
       //End
 
-      async function formFieldGenerator(fieldData){
-        console.log(fieldData.code +" => "+fieldData.type);
-        console.log(fieldData);
-        console.log("--------------------------------------");
+      async function formFieldGenerator(fieldData, subtable = false){
+        // console.log(fieldData.code +" => "+fieldData.type);
+        // console.log(fieldData);
+        // console.log("--------------------------------------");
         
         const requiredMark = fieldData.required 
           ? '<span style="color:red">*</span>' 
@@ -465,7 +526,7 @@
         const requiredAttr = fieldData.required ? "required" : "";
 
         if(fieldData.type === "RICH_TEXT" || fieldData.type === "MULTI_LINE_TEXT" ){
-          return await richTextFieldGenerator(fieldData, requiredMark, requiredAttr);
+          return await richTextFieldGenerator(fieldData, requiredMark, requiredAttr, subtable);
         }
 
         if(fieldData.type === "SUBTABLE"){
@@ -476,28 +537,28 @@
           </div>`;
         }
 
-        if(["SINGLE_LINE_TEXT", "NUMBER", "RECORD_NUMBER", "GROUP", "MODIFIER", "STATUS", "CATEGORY", "CREATOR", "ORGANIZATION_SELECT"].includes(fieldData.type)){
-          return await singleLineTextGenerator(fieldData, requiredMark, requiredAttr);
+        if(["SINGLE_LINE_TEXT", "NUMBER", "RECORD_NUMBER", "GROUP", "MODIFIER", "STATUS", "CATEGORY", "CREATOR", "ORGANIZATION_SELECT", "GROUP_SELECT", "USER_SELECT"].includes(fieldData.type)){
+          return await singleLineTextGenerator(fieldData, requiredMark, requiredAttr, subtable);
         }
 
         if(fieldData.type == "FILE"){
-          return await fileTypeFieldGenerator(fieldData, requiredMark, requiredAttr);
+          return await fileTypeFieldGenerator(fieldData, requiredMark, requiredAttr, subtable);
         }
 
-        if(["DROP_DOWN", "USER_SELECT"].includes(fieldData.type)){
-          return await dropdownFieldGenerator(fieldData, requiredMark, requiredAttr);
+        if(["DROP_DOWN"].includes(fieldData.type)){
+          return await dropdownFieldGenerator(fieldData, requiredMark, requiredAttr, subtable);
         }
 
         if(fieldData.type == "RADIO_BUTTON"){
-          return await radioButtonFieldGenerator(fieldData, requiredMark, requiredAttr);
+          return await radioButtonFieldGenerator(fieldData, requiredMark, requiredAttr, subtable);
         }
 
         if(fieldData.type == "CHECK_BOX"){
-          return await checkboxFieldGenerator(fieldData, requiredMark, requiredAttr);
+          return await checkboxFieldGenerator(fieldData, requiredMark, requiredAttr, subtable);
         }
 
         if(["UPDATED_TIME", "DATETIME", "CREATED_TIME", "DATE", "TIME"].includes(fieldData.type)){
-          return await dateTimeFieldGenerator(fieldData, requiredMark, requiredAttr);
+          return await dateTimeFieldGenerator(fieldData, requiredMark, requiredAttr, subtable);
         }
 
         return `<div class="form-group">
@@ -522,20 +583,76 @@
         </form>`;
       }
 
+      const skipFieldTypeforSubmission = ['MODIFIER', 'STATUS', 'CATEGORY', 'STATUS_ASSIGNEE', '承認１', '承認３', '承認４', '承認５', 'UPDATED_TIME', 'CREATED_TIME', 'CREATOR', 'GROUP'];
+
+      async function manageSubmissionOfFormData() {
+        console.log(mainData.mainFieldProperties);
+        console.log(lookupRelatedfield);
+        let formData = {};
+
+        mainData.mainFieldProperties.forEach(elem => {
+          console.log(elem.type);
+          if (!lookupRelatedfield.includes(elem.code) && !skipFieldTypeforSubmission.includes(elem.type)) {
+            console.log(elem.code);
+            if (elem.type == "RADIO_BUTTON") {
+              formData[elem.code] = {
+                value: document.querySelector(`input[name="${elem.code}"]:checked`)?.value || ""
+              };
+            } else if (elem.type == "DROP_DOWN") {
+              formData[elem.code] = {
+                value: document.getElementById(elem.code).value || ""
+              };
+            } else {
+              formData[elem.code] = {
+                value: document.getElementById(elem.code).value
+              };  
+            }
+          }
+          
+        });
+
+        console.log(formData);
+
+        const response = await fetch("https://1frg78a4ae.execute-api.ap-northeast-3.amazonaws.com/dev/saveRecordIntoKintone", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ 
+            kintoneAppId: mainData.kintoneAppId,
+            record: formData
+          })
+        });
+
+        const result = await response.json();
+        console.log(result);
+      }
+
       async function loadMainData() {
           const data = await getAppData(appId);
           mainData = data.find(item => item.directory === directory);
         }
         (async () => {
           await loadMainData();
+          allUserData = await dropDownFieldGenerator(userSelectConfigure);
           console.log(mainData);
           document.getElementById("year").innerText = new Date().getFullYear();
           document.getElementById("appTitle").innerText = mainData.title;
           document.getElementById("formArea").innerHTML = await formGenerator(mainData.mainFieldProperties);
           
+
+          
           $('.selectpicker').selectpicker({
             width: '100%',
             size: 7
+          });
+          
+
+
+          document.querySelector(".submit-btn").addEventListener("click", async function(e) {
+             e.preventDefault();
+             const data = await manageSubmissionOfFormData();
+            // console.log(data); // array দেখতে পাবে
           });
 
 
