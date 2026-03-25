@@ -16,9 +16,16 @@
     });
     let rowCount = 1;
     let fieldProperties = [];
+    let lookupRelatedData = [];
     let editRowIndex = null;
     let editItemId;
     let recordId;
+
+    let allFieldList = [];
+    let lookUpFieldList = [];
+    let orgField = ['グループ名', '氏名', '所属', '承認５', 'ルックアップ'];
+    let selectedFieldKey = [];
+    let validationStatus = false;
     
 
     const actionButtons = `
@@ -366,9 +373,31 @@
     }
 
 
+    
+
+
     $( document ).ready(async function() {
 
+      
         let getData = await getDataByKintoneAppId(kintone.app.getId());
+
+        //New Add (25/03/2026)
+        fieldProperties.map(el =>{
+              if(el.lookup){
+                allFieldList.push(el);
+                if(el.lookup.fieldMappings){
+                  el.lookup.fieldMappings.forEach(lf => {
+                  lookUpFieldList.push(lf.field);
+                  })
+                }
+                
+              }
+            });
+
+        // console.log(allFieldList);
+
+        // console.log(lookUpFieldList);
+        //End New Add
 
         getData.map((element) =>{
           let editedData = [];
@@ -729,7 +758,42 @@
         });
 
         if (!fields.length) {
-          alert("Add at least one field");
+          Swal.fire({
+            icon: "warning",
+            title: "No Fields Added",
+            text: "Please add at least one field.",
+            confirmButtonText: "OK"
+          });
+          return;
+        }
+
+        fields.map(fe=>{
+            selectedFieldKey.push(fe.code);
+          });
+
+        fields.forEach(elem => {
+            if (lookUpFieldList.includes(elem.code)) {
+              allFieldList.map(el=>{
+                el.lookup.fieldMappings.forEach(lf => {
+                 if(lf.field == elem.code){
+                  if(selectedFieldKey.includes(el.code)){
+                    validationStatus = true
+                  }else{
+                    validationStatus = false
+                  }
+                 }
+                })
+              })
+            }
+          });
+
+        if (validationStatus == false) {
+          Swal.fire({
+            icon: "error",
+            title: "Validation Failed",
+            text: "Something went wrong. Please review your selected form data!",
+            confirmButtonText: "OK"
+          });
           return;
         }
 

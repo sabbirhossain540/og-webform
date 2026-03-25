@@ -174,7 +174,7 @@
       // const directory = 'ehthVhECWU';
 
       const appId = 953;
-      const directory = 'lMTT2sTFfR';
+      const directory = '5bZOjLCN7f';
 
 
       const userSelectConfigure = {
@@ -316,13 +316,17 @@
       }
 
       function fieldValueSetFunction(value, selectElem) {
+        console.log(selectElem);
         const fieldCode = selectElem.getAttribute("data-field-code");
         const data = dataMap[fieldCode];
         
+        console.log(data);
         const matched = data.find(record => {
           const shimei = record[fieldCode]?.value;
           return shimei === value;
         });
+
+        
 
         if (matched) {
           const fieldNames = Object.keys(matched);
@@ -627,6 +631,7 @@
         const result = await response.json();
         console.log(result);
       }
+      
 
       async function loadMainData() {
           const data = await getAppData(appId);
@@ -639,7 +644,6 @@
           document.getElementById("year").innerText = new Date().getFullYear();
           document.getElementById("appTitle").innerText = mainData.title;
           document.getElementById("formArea").innerHTML = await formGenerator(mainData.mainFieldProperties);
-          
 
           
           $('.selectpicker').selectpicker({
