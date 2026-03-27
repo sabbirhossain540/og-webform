@@ -174,7 +174,7 @@
       // const directory = 'ehthVhECWU';
 
       const appId = 953;
-      const directory = '5bZOjLCN7f';
+      const directory = 'DtkDjoWwSm';
 
 
       const userSelectConfigure = {
@@ -221,6 +221,7 @@
       
 
       async function dropDownFieldGenerator(data) {
+        console.log(data);
 
         const res = await fetch(
           "https://1frg78a4ae.execute-api.ap-northeast-3.amazonaws.com/dev/lookup",
@@ -250,12 +251,22 @@
         //For default User Retrive Process
         if(fieldData.type == "USER_SELECT"){
           const results = allUserData;
+
           if (results) {
+            // console.log(allUserData);
+            // console.log(fieldData.code);
             dataMap[fieldData.code] = results;
+            //console.log(dataMap);
+
             let options = `<option value="">Select ${fieldData.label}</option>`;
             results.forEach(elem => {
                const value = elem['氏名']?.value || "";
-               options += `<option value="${value}">${value}</option>`;
+               const code = elem['社員番号']?.value || "";
+               let mainValue = code;
+               if(code == undefined){
+                mainValue = value;
+               }
+               options += `<option value="${code}">${value}</option>`;
             }); 
 
             return `
@@ -316,17 +327,12 @@
       }
 
       function fieldValueSetFunction(value, selectElem) {
-        console.log(selectElem);
         const fieldCode = selectElem.getAttribute("data-field-code");
         const data = dataMap[fieldCode];
-        
-        console.log(data);
         const matched = data.find(record => {
           const shimei = record[fieldCode]?.value;
           return shimei === value;
         });
-
-        
 
         if (matched) {
           const fieldNames = Object.keys(matched);
@@ -470,13 +476,13 @@
 
      async function tableGenerator(fieldData){
 
-        tableFields = Object.values(fieldData);
+        tableFields = Object.values(fieldData.fields);
 
         let header = tableFields.map(f => `<th>${f.label}</th>`).join("");
         header += `<th style="min-width: 100px !important;">Action</th>`;
 
         return `
-        <table class="table table-bordered" id="dynamicTable">
+        <table class="table table-bordered" id=${fieldData.code}>
           <thead>
             <tr>${header}</tr>
           </thead>
@@ -534,7 +540,7 @@
         }
 
         if(fieldData.type === "SUBTABLE"){
-          const tableData =  await tableGenerator(fieldData.fields);
+          const tableData =  await tableGenerator(fieldData);
           return `<div class="form-group">
             <label>${fieldData.label} ${requiredMark}</label>
             ${tableData}
@@ -587,17 +593,82 @@
         </form>`;
       }
 
-      const skipFieldTypeforSubmission = ['MODIFIER', 'STATUS', 'CATEGORY', 'STATUS_ASSIGNEE', '承認１', '承認３', '承認４', '承認５', 'UPDATED_TIME', 'CREATED_TIME', 'CREATOR', 'GROUP'];
+      function fieldTypeDetector(alldata, fieldCode) {
+
+          const field = alldata.fields[fieldCode];
+          if (!field) {
+              console.log("Field not found:", fieldCode);
+              return null;
+          }
+  
+          return field.type;
+      }
+
+      function generateTableValue(tableArray, fieldTypeHolder) {
+        console.log(fieldTypeHolder);
+        let valueArray = [];
+
+        tableArray.forEach(row => {
+            let rowValue = {
+                id: "",  // নতুন row হলে empty, edit হলে existing id দাও
+                value: {}
+            };
+
+            row.ids.forEach(field => {
+                //console.log(field);
+                const fieldType = fieldTypeDetector(fieldTypeHolder, field.id);
+                //console.log(fieldType);
+
+
+                // type অনুযায়ী value structure বানাও
+                if (fieldType == "USER_SELECT" || fieldType == "GROUP_SELECT") {
+                    // array type value
+                    rowValue.value[field.id] = {
+                        type: fieldType,
+                        value: [{ code: field.value}]
+                    };
+
+                } else if (fieldType === "DROP_DOWN" || fieldType === "NUMBER" || fieldType === "SINGLE_LINE_TEXT") {
+                    // simple value
+                    console.log(field);
+                    rowValue.value[field.id] = {
+                        type: fieldType,
+                        value: field.value
+                    };
+
+                } else {
+                    // default — অন্য সব type
+                    rowValue.value[field.id] = {
+                        type: fieldType,
+                        value: field.value
+                    };
+                }
+            });
+
+            valueArray.push(rowValue);
+        });
+
+        return valueArray;
+    }
+
+
+      async function blobToBase64(blob) {
+          return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result.split(',')[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+          });
+      }
+
+      const skipFieldTypeforSubmission = ['MODIFIER', 'STATUS', 'CATEGORY', 'STATUS_ASSIGNEE', 'UPDATED_TIME', 'CREATED_TIME', 'CREATOR', 'GROUP'];
 
       async function manageSubmissionOfFormData() {
-        console.log(mainData.mainFieldProperties);
-        console.log(lookupRelatedfield);
         let formData = {};
 
-        mainData.mainFieldProperties.forEach(elem => {
-          console.log(elem.type);
+        mainData.mainFieldProperties.forEach(async elem => {
           if (!lookupRelatedfield.includes(elem.code) && !skipFieldTypeforSubmission.includes(elem.type)) {
-            console.log(elem.code);
+            //console.log(elem.code);
             if (elem.type == "RADIO_BUTTON") {
               formData[elem.code] = {
                 value: document.querySelector(`input[name="${elem.code}"]:checked`)?.value || ""
@@ -606,6 +677,57 @@
               formData[elem.code] = {
                 value: document.getElementById(elem.code).value || ""
               };
+            } else if (elem.type == "FILE") {
+              const fileInput = document.getElementById(elem.code);
+              const file = fileInput.files[0]; 
+              if (file) {
+                  const base64 = await blobToBase64(file); 
+                  console.log(base64); 
+              }
+              // const blob = new Blob([document.getElementById(elem.code).value], { type: 'text/plain' });
+              // const base64 = blobToBase64(blob);
+              // console.log(base64);
+
+              // formData[elem.code] = {
+              //   value: document.getElementById(elem.code).value || ""
+              // };
+            } else if (elem.type == "SUBTABLE") {
+              let tableRow = document.getElementById(elem.code);
+              const rows = tableRow.querySelectorAll("tr");
+    
+              let tableArray = [];
+
+              rows.forEach((row, rowIndex) => {
+                  let rowData = {
+                      rowIndex: rowIndex,
+                      ids: []
+                  };
+                  
+                  row.querySelectorAll("td").forEach((td, tdIndex) => {
+                      const field = td.querySelector("[id]");
+                      if (field) {
+                          rowData.ids.push({
+                              tdIndex: tdIndex,
+                              id: field.id,
+                              value: field.value
+                          });
+                      }
+                  });
+
+                  if (rowData.ids.length > 0) {
+                      tableArray.push(rowData);
+                  }
+              });
+              
+
+              let fieldData = generateTableValue(tableArray, elem);
+
+              //Test Parsepective
+              formData[elem.code] = {
+                value: fieldData
+              };
+
+
             } else {
               formData[elem.code] = {
                 value: document.getElementById(elem.code).value
@@ -616,20 +738,21 @@
         });
 
         console.log(formData);
+        
 
-        const response = await fetch("https://1frg78a4ae.execute-api.ap-northeast-3.amazonaws.com/dev/saveRecordIntoKintone", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ 
-            kintoneAppId: mainData.kintoneAppId,
-            record: formData
-          })
-        });
+        // const response = await fetch("https://1frg78a4ae.execute-api.ap-northeast-3.amazonaws.com/dev/saveRecordIntoKintone", {
+        //   method: "POST",
+        //   headers: {
+        //     "Content-Type": "application/json"
+        //   },
+        //   body: JSON.stringify({ 
+        //     kintoneAppId: mainData.kintoneAppId,
+        //     record: formData
+        //   })
+        // });
 
-        const result = await response.json();
-        console.log(result);
+        // const result = await response.json();
+        // console.log(result);
       }
       
 
@@ -669,11 +792,30 @@
 
           //Dynamic Table Script 
           document.addEventListener("click", async function(e){
-            if(e.target.classList.contains("addRow")){
-              const tableBody = document.getElementById("tableBody");
-              const newRow = await tableRowGenerator();
-              tableBody.insertAdjacentHTML("beforeend", newRow);
+            // if(e.target.classList.contains("addRow")){
+            //   const tableBody = document.getElementById("tableBody");
+            //   console.log(tableBody);
+            //   const newRow = await tableRowGenerator();
+            //   console.log(newRow);
+            //   tableBody.insertAdjacentHTML("beforeend", newRow);
+            // }
+
+            if (e.target.classList.contains("addRow")) {
+                const tableBody = document.getElementById("tableBody");
+                const newRow = await tableRowGenerator();
+
+                const tempTbody = document.createElement("tbody");
+                tempTbody.innerHTML = newRow.trim();
+
+                const trElement = tempTbody.querySelector("tr");
+                if (trElement) {
+                    tableBody.appendChild(trElement);
+                    $(trElement).find('.selectpicker').selectpicker({
+                        size: 5  
+                    });
+                }
             }
+
 
             if(e.target.classList.contains("removeRow")){
               const row = e.target.closest("tr");

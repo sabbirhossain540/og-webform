@@ -4,6 +4,8 @@ const { randomUUID } = require("crypto");
 const { QueryCommand } = require("@aws-sdk/lib-dynamodb");
 const { S3Client, CopyObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } = require("@aws-sdk/client-s3");
 const https = require("https");
+// const fetch = require('node-fetch');
+// const FormData = require('form-data');
 
 const client = new DynamoDBClient({ region: "ap-northeast-3" });
 const ddb = DynamoDBDocumentClient.from(client);
@@ -452,3 +454,107 @@ module.exports.saveRecordIntoKintone = async (event) => {
     body: result.body
   };
 };
+
+
+
+//Test Field
+
+
+// module.exports.fileUploadHandler = async (event) => {
+//   const body = JSON.parse(event.body);
+//     console.log(body);
+
+//     const KINTONE_DOMAIN = process.env.COMPANY_NAME;
+
+//     // ✅ Base64 encode credentials
+//     const credentials = process.env.OGUSU_AUTH;
+
+//     // ✅ CORS preflight
+//     if (event.httpMethod === 'OPTIONS') {
+//         return {
+//             statusCode: 200,
+//             headers: {
+//                 'Access-Control-Allow-Origin': '*',
+//                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
+//                 'Access-Control-Allow-Headers': 'Content-Type',
+//             },
+//             body: '',
+//         };
+//     }
+
+//     try {
+//         const body = JSON.parse(event.body);
+//         const { fileContent, fileName, fileType } = body;
+
+//         // ✅ Validation
+//         if (!fileContent || !fileName) {
+//             return {
+//                 statusCode: 400,
+//                 headers: { 'Access-Control-Allow-Origin': '*' },
+//                 body: JSON.stringify({
+//                     success: false,
+//                     error: "fileContent and fileName are required"
+//                 }),
+//             };
+//         }
+
+//         // ✅ Base64 → Buffer
+//         const fileBuffer = Buffer.from(fileContent, 'base64');
+
+//         // ✅ FormData বানাও
+//         const formData = new FormData();
+//         formData.append('file', fileBuffer, {
+//             filename: fileName,
+//             contentType: fileType || 'application/octet-stream',
+//         });
+
+//         // ✅ Kintone API call
+//         const resp = await fetch(`https://${KINTONE_DOMAIN}/k/v1/file.json`, {
+//             method: 'POST',
+//             headers: {
+//                 'X-Cybozu-Authorization': credentials,
+//                 'X-Requested-With': 'XMLHttpRequest',
+//                 ...formData.getHeaders()
+//             },
+//             body: formData,
+//         });
+
+//         const respData = await resp.json();
+//         console.log("Kintone response:", respData);
+
+//         // ✅ Kintone error check
+//         if (respData.code) {
+//             return {
+//                 statusCode: 400,
+//                 headers: { 'Access-Control-Allow-Origin': '*' },
+//                 body: JSON.stringify({
+//                     success: false,
+//                     error: respData.message,
+//                     code: respData.code
+//                 }),
+//             };
+//         }
+
+//         return {
+//             statusCode: 200,
+//             headers: { 'Access-Control-Allow-Origin': '*' },
+//             body: JSON.stringify({
+//                 success: true,
+//                 fileKey: respData.fileKey
+//             }),
+//         };
+
+//     } catch (error) {
+//         console.error("Error:", error);
+//         return {
+//             statusCode: 500,
+//             headers: { 'Access-Control-Allow-Origin': '*' },
+//             body: JSON.stringify({
+//                 success: false,
+//                 error: error.message
+//             }),
+//         };
+//     }
+// };
+
+
